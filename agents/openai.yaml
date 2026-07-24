@@ -1,0 +1,4 @@
+interface:
+  display_name: "Persian and English DOCX Engineering"
+  short_description: "Build and validate robust RTL/LTR Word documents"
+  default_prompt: "Use $build-bilingual-docx to create or repair a production-ready Persian or English DOCX and validate its layout."
