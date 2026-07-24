@@ -26,7 +26,7 @@ Skills قرار دهید:
 
 ```text
 Windows:
-C:\Users\<USER>\.agents\skills\build-bilingual-docx
+%USERPROFILE%\.agents\skills\build-bilingual-docx
 
 macOS/Linux:
 $HOME/.agents/skills/build-bilingual-docx

@@ -97,19 +97,19 @@ build-bilingual-docx/build-bilingual-docx/SKILL.md
 پوشه شخصی Skills را بسازید:
 
 ```text
-C:\Users\<USER-NAME>\.agents\skills
+%USERPROFILE%\.agents\skills
 ```
 
 سپس کل پوشه `build-bilingual-docx` را در آن کپی کنید. مسیر نهایی باید این باشد:
 
 ```text
-C:\Users\<USER-NAME>\.agents\skills\build-bilingual-docx\SKILL.md
+%USERPROFILE%\.agents\skills\build-bilingual-docx\SKILL.md
 ```
 
 روش PowerShell:
 
 ```powershell
-$source = "C:\Path\build-bilingual-docx"
+$source = (Resolve-Path ".\build-bilingual-docx").Path
 $destinationRoot = Join-Path $env:USERPROFILE ".agents\skills"
 New-Item -ItemType Directory -Force -Path $destinationRoot | Out-Null
 Copy-Item -LiteralPath $source -Destination $destinationRoot -Recurse
@@ -120,13 +120,13 @@ Copy-Item -LiteralPath $source -Destination $destinationRoot -Recurse
 اگر برنامه شما Skill را از مسیر بالا شناسایی نکرد، مسیر زیر را نیز امتحان کنید:
 
 ```text
-C:\Users\<USER-NAME>\.codex\skills\build-bilingual-docx\SKILL.md
+%USERPROFILE%\.codex\skills\build-bilingual-docx\SKILL.md
 ```
 
 روش PowerShell:
 
 ```powershell
-$source = "C:\Path\build-bilingual-docx"
+$source = (Resolve-Path ".\build-bilingual-docx").Path
 $destinationRoot = Join-Path $env:USERPROFILE ".codex\skills"
 New-Item -ItemType Directory -Force -Path $destinationRoot | Out-Null
 Copy-Item -LiteralPath $source -Destination $destinationRoot -Recurse

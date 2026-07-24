@@ -31,7 +31,7 @@ Preferred current user location:
 PowerShell:
 
 ```powershell
-$source = "C:\Path\build-bilingual-docx"
+$source = (Resolve-Path ".\build-bilingual-docx").Path
 $root = Join-Path $env:USERPROFILE ".agents\skills"
 New-Item -ItemType Directory -Force -Path $root | Out-Null
 Copy-Item -LiteralPath $source -Destination $root -Recurse
