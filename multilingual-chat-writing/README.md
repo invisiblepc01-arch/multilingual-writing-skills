@@ -3,7 +3,8 @@
 An independent Agent Skill for writing and displaying Persian, English, and
 mixed-language content directly in ChatGPT or Codex. It covers direction-safe
 prose, LTR technical atoms, Persian process arrows, code blocks, Solar Hijri
-dates, formulas, lists, and visually verified RTL tables.
+dates, formulas, lists, headings, quotations, links, citations, tone fidelity,
+and visually verified RTL tables.
 
 This Skill is intentionally separate from the repository's root
 `build-bilingual-docx` Skill, which handles Microsoft Word files.

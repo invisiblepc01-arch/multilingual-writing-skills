@@ -10,10 +10,19 @@ independent from `build-bilingual-docx`, which owns DOCX authoring and file QA.
 
 ## Core outcome
 
+- Detect the dominant language, intended audience, and requested level of
+  formality before drafting. Match the user's terminology and assumed
+  knowledge without silently changing the register.
 - Preserve the semantic word order the user intended; never rewrite source
   order merely to compensate for bidirectional rendering.
 - Keep Persian prose RTL and English terms, acronyms, code, URLs, file paths,
   identifiers, versions, dates inside filenames, and formulas internally LTR.
+- Preserve the spelling, capitalization, product names, identifiers, and
+  technical vocabulary supplied by the user. Do not translate, transliterate,
+  expand, or normalize them unless requested or needed to correct a stated
+  error.
+- Do not invent claims, sources, citations, quotations, translations, or
+  factual details. Keep supplied quotations and source attributions faithful.
 - Choose formatting based on the target renderer, not on how the Markdown
   source looks. Inspect the rendered result when direction or alignment is
   consequential.
@@ -21,6 +30,11 @@ independent from `build-bilingual-docx`, which owns DOCX authoring and file QA.
 ## Ordinary prose and lists
 
 - Lead with the answer and use short RTL-compatible Persian paragraphs.
+- Use meaningful headings only when they improve navigation. Keep a heading's
+  Persian/English order, numbering, punctuation, and technical atoms stable.
+- Preserve the user's choice of Persian or ASCII digits and Persian or English
+  punctuation unless consistency or a requested house style requires a
+  change. Treat mixed dates, decimals, units, and version numbers as atoms.
 - A Persian sentence that starts with an LTR atom such as `URL`, `API`, a
   number, or a formula needs an RTL anchor. Prefer a visible Persian label when
   it does not change the requested wording. When the wording must begin with
@@ -30,6 +44,20 @@ independent from `build-bilingual-docx`, which owns DOCX authoring and file QA.
   paragraphs headed by visible labels such as `قاعدهٔ اول:`.
 - Do not use a fenced code block merely to stabilize an ordinary Persian
   sentence; code blocks are LTR containers.
+
+## Quotes, links, and citations
+
+- Keep opening and closing quotation marks, parentheses, brackets, colons, and
+  sentence-final punctuation attached to the intended RTL or LTR phrase.
+- Preserve quoted wording exactly unless the user requests editing. Use a
+  block quote only when the host renders its Persian direction readably;
+  otherwise use a labeled Persian paragraph.
+- Keep a URL as one LTR atom. In a Markdown link, preserve the visible label's
+  language and the target URL separately; never reorder query characters such
+  as `?`, `&`, `=`, or `#`.
+- Place each citation immediately after the claim it supports. Keep English
+  titles and identifiers LTR without forcing the surrounding Persian sentence
+  to become LTR.
 
 ## Processes and arrows
 
@@ -104,5 +132,7 @@ Before sending a direction-sensitive response:
    attached to the intended content.
 4. Confirm Persian lists and sensitive tables are aligned in the rendered
    surface, not merely in Markdown source.
-5. If the host rendering remains ambiguous, switch to a vertical structure or
+5. Confirm tone, terminology, quotations, links, citations, numeral style, and
+   factual content still match the user's request and sources.
+6. If the host rendering remains ambiguous, switch to a vertical structure or
    a controlled, screenshot-verified visual rather than guessing.
