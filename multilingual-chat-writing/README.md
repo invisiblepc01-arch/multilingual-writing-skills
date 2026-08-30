@@ -7,7 +7,7 @@ Persian, while leaving every file and artifact under the primary Skill's sole
 ownership. It covers direction-safe
 prose, LTR technical atoms, Persian process arrows, code blocks, Solar Hijri
 dates, formulas, lists, headings, quotations, links, citations, tone fidelity,
-and visually verified RTL tables.
+visible Persian-first paragraph anchors, and visually verified RTL tables.
 
 This Skill is intentionally separate from the repository's root
 `build-bilingual-docx` Skill, which alone handles Microsoft Word files. The two

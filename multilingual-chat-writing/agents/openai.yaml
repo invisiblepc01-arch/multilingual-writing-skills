@@ -1,7 +1,7 @@
 interface:
   display_name: "Persian and English Chat Writing"
   short_description: "Mandatory RTL-safe layer for every Persian chat response"
-  default_prompt: "Use $multilingual-chat-writing as a read-only response-layer companion for every user-visible assistant message containing Persian/Farsi, including commentary and final answers. Keep all artifact authoring and edits under the primary task skill."
+  default_prompt: "Use $multilingual-chat-writing as a read-only response-layer companion for every user-visible assistant message containing Persian/Farsi; begin each Persian-dominant non-code block with a visible Persian anchor, and keep artifact work under the primary skill."
 
 policy:
   allow_implicit_invocation: true

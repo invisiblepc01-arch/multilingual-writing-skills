@@ -54,6 +54,24 @@ and words the direction-safe chat representation.
 ## Ordinary prose and lists
 
 - Lead with the answer and use short RTL-compatible Persian paragraphs.
+- For every assistant-authored Persian-dominant paragraph, heading, status
+  line, caption, and labeled link line, the first strong visible directional
+  character after Markdown syntax must be Persian/Arabic. This is a hard
+  pre-send invariant. Start with a visible Persian anchor such as
+  `ثبت نهایی:`, `گفت‌وگوی مقصد:`, or `نام فایل:` before any English term,
+  ASCII number, inline code, Markdown link, filename, icon, emoji, or quoted
+  LTR name.
+- A Persian word later in the line does not repair an LTR paragraph base.
+  Never write mixed labels such as `Commit نهایی:` or start a Persian report
+  line with `Task`, `GitHub`, `URL`, a commit hash, or a Markdown link. Rewrite
+  them as Persian-first labels such as `ثبت نهایی در Git:` and
+  `اعمال در گفت‌وگوی دیگر:`. Neutral opening punctuation such as quotes or
+  parentheses is not an RTL anchor.
+- Exception: when exact user-supplied wording must visibly begin with an LTR
+  atom, preserve that semantic order and use the validated `RLM` plus
+  `LRI`/`PDI` construction from the reference. Do not add a Persian label if it
+  would change the requested wording. This exception requires rendered QA; it
+  does not apply to assistant-authored status labels that can be rewritten.
 - Use meaningful headings only when they improve navigation. Keep a heading's
   Persian/English order, numbering, punctuation, and technical atoms stable.
 - Preserve the user's choice of Persian or ASCII digits and Persian or English
@@ -182,23 +200,29 @@ For a Persian-dominant response, scan every proposed Markdown list before
 sending. Convert it to labeled Persian paragraphs unless right-side markers
 and RTL wrapping have been verified in the actual host. Then inspect mixed
 sentences containing inline code, two or more LTR atoms, or an LTR atom near a
-Persian sentence-final verb.
+Persian sentence-final verb. Finally, perform a first-strong-character audit
+on every non-code paragraph, heading, caption, and standalone link/status line.
+If its first strong character is LTR, either add a visible Persian-first anchor
+or apply the exact-wording exception and visually verify it.
 
 ## Release check
 
 Before sending a direction-sensitive response:
 
 1. Confirm semantic first-to-last word and stage order.
-2. Confirm Persian text reads RTL and each technical atom remains internally
+2. Confirm every Persian-dominant non-code block begins with a strong Persian
+   character before any LTR atom, link, code span, number, icon, or neutral
+   punctuation, unless the validated exact-wording exception applies.
+3. Confirm Persian text reads RTL and each technical atom remains internally
    LTR without character reversal.
-3. Confirm arrows, punctuation, quotes, parentheses, dates, and formulas remain
+4. Confirm arrows, punctuation, quotes, parentheses, dates, and formulas remain
    attached to the intended content.
-4. Confirm Persian lists and sensitive tables are aligned in the rendered
+5. Confirm Persian lists and sensitive tables are aligned in the rendered
    surface, not merely in Markdown source.
-5. Confirm tone, terminology, quotations, links, citations, numeral style, and
+6. Confirm tone, terminology, quotations, links, citations, numeral style, and
    factual content still match the user's request and sources.
-6. Check both normal and narrow viewport widths when wrapping could occur.
+7. Check both normal and narrow viewport widths when wrapping could occur.
    A correct logical source that fails after line wrapping is a rendering
    failure.
-7. If the host rendering remains ambiguous, switch to a vertical structure or
+8. If the host rendering remains ambiguous, switch to a vertical structure or
    a controlled, screenshot-verified visual rather than guessing.

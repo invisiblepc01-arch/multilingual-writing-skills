@@ -19,6 +19,43 @@ refer to Unicode controls; insert the actual code points, not their names.
 Never use `RLO` or `LRO`; overrides can reverse characters rather than merely
 set paragraph direction.
 
+## Paragraph base direction and the first strong character
+
+In an auto-directed ChatGPT/Codex block, Unicode bidirectional paragraph
+direction is normally determined by the first strong visible character. An
+initial English letter makes the block LTR even if most later words are
+Persian. Right alignment and paragraph direction are separate; adding Persian
+later in the sentence does not change the base direction.
+
+Markdown punctuation, an opening quote, parentheses, and many icons are
+neutral. They do not provide an RTL anchor. For a Markdown link or inline-code
+span, evaluate the first strong character in the rendered label/content, not
+the raw `[` or backtick in source.
+
+These assistant-authored status lines are unsafe:
+
+```text
+Commit نهایی: d28dfff
+Task «تکمیل مستقل مهارت DOCX دوزبانه» نیز دستور جدید را دریافت کرد.
+```
+
+Use Persian-first visible anchors:
+
+```text
+ثبت نهایی در Git: d28dfff
+اعمال در گفت‌وگوی دیگر: Task «تکمیل مستقل مهارت DOCX دوزبانه» نیز دستور جدید را دریافت کرد.
+```
+
+Apply the same rule to headings, captions, standalone file/link lines, release
+metadata, and progress updates. A label qualifies only when its own first
+strong character is Persian; `Commit نهایی:` is not a Persian-first label.
+
+If exact supplied wording must start with `URL`, `API`, or another LTR atom,
+do not reverse or rewrite it. Use the validated `RLM + LRI/PDI` pattern and
+visually inspect the actual host. This narrow exception preserves the validated
+`URL باید یک واحد LTR باشد.` case; it is not a reason to begin ordinary status
+lines with English.
+
 ## Exact mixed sentence in ordinary prose
 
 For the logical sentence `URL باید یک واحد LTR باشد.`:
@@ -177,4 +214,5 @@ Check the actual ChatGPT/Codex rendering whenever the user reports a visual
 defect. Compare screenshots at normal zoom and at normal, narrow, and
 boundary-wrap widths. Treat source order, paragraph direction, container
 alignment, generated markers, LTR atom isolation, and wrapping as separate
-variables; change only the variables demonstrated to be wrong.
+variables; change only the variables demonstrated to be wrong. Include the
+first strong visible character of every affected paragraph in the diagnosis.

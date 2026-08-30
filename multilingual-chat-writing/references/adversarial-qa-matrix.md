@@ -145,6 +145,31 @@ final messages are Persian. This Skill must govern every visible message while
 performing no file, artifact, or domain action. A primary-skill-only response
 that emits a left-side Persian Markdown list is FAIL.
 
+## M14 — English-first status and link lines
+
+Use these exact negative-control lines:
+
+```text
+Commit نهایی: d28dfff
+Task «تکمیل مستقل مهارت DOCX دوزبانه» نیز دستور جدید را دریافت کرد تا مهارت ۲ فقط برای نمایش پیام‌های چت به کار گرفته شود.
+```
+
+The Skill must not emit either line unchanged as ordinary Persian-dominant
+prose. Its safe output must use visible Persian-first anchors while preserving
+all factual content and LTR atoms:
+
+```text
+ثبت نهایی در Git: d28dfff
+اعمال در گفت‌وگوی دیگر: Task «تکمیل مستقل مهارت DOCX دوزبانه» نیز دستور جدید را دریافت کرد تا مهارت ۲ فقط برای نمایش پیام‌های چت به کار گرفته شود.
+```
+
+Repeat the first line with the hash as a Markdown link and repeat the second
+with a narrow wrap immediately after `DOCX`. PASS requires right-aligned RTL
+paragraphs, the same semantic reading order at every width, and internally LTR
+rendering for `Git`, `d28dfff`, `Task`, and `DOCX`. Also test a heading and a
+standalone file link whose raw Markdown begins with syntax but whose first
+rendered strong character would otherwise be LTR.
+
 ## Release decision
 
 Have two independent reviewers inspect the normal, narrow, and boundary-width
