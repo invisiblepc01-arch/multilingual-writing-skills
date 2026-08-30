@@ -1,12 +1,36 @@
 ---
 name: multilingual-chat-writing
-description: Write, revise, translate, and display Persian/Farsi, English, or mixed-language content directly in ChatGPT or Codex chat. Use for RTL/LTR prose, mixed technical terms, lists, process arrows, Solar Hijri dates, formulas, code blocks, URLs, and tables whose visual order matters; do not use for DOCX generation or document rendering.
+description: Write, revise, translate, and display Persian/Farsi, English, or mixed-language content directly in ChatGPT or Codex. Apply it as a mandatory response layer to every user-visible message containing Persian, including commentary, progress, questions, and final answers, alongside any primary task skill—even for DOCX, code, data, artifact, or skill-development work. It governs only direct-chat wording and RTL/LTR rendering; it must never author, edit, render, validate, or otherwise modify a user's DOCX, another user artifact, or another skill.
 ---
 
 # Multilingual chat writing
 
-Use this skill only for content displayed directly in ChatGPT or Codex. Keep it
-independent from `build-bilingual-docx`, which owns DOCX authoring and file QA.
+## Response-layer scope and co-invocation
+
+Use this skill for every assistant-authored message containing Persian/Farsi
+that is displayed directly in ChatGPT or Codex. This includes commentary,
+progress updates, clarifying questions, summaries, and final answers, even
+when the primary task is owned by another skill.
+
+Treat this skill as a mandatory response-layer companion. The primary domain
+skill owns facts, actions, files, artifacts, and domain-specific decisions;
+this skill owns only the wording and RTL/LTR rendering of the visible chat
+response.
+
+A statement that another skill or directory is read-only, closed, or outside
+the editing scope does not prohibit read-only invocation of this skill for chat
+rendering. Do not interpret “do not edit `multilingual-chat-writing`” as “do
+not apply `multilingual-chat-writing` to the response.”
+
+Never use this skill to author, revise, format, render, validate, or change
+content inside a DOCX or another user artifact. Never modify, merge, copy, or
+reinterpret files or instructions belonging to another skill. Co-invocation
+does not transfer artifact ownership to this skill. In particular,
+`build-bilingual-docx` remains the sole owner of DOCX authoring and file QA.
+Temporary visual QA of chat rendering is permitted. If the user deliverable
+itself must be an image or another artifact, delegate its creation and artifact
+validation to the appropriate primary or visual skill; this skill only selects
+and words the direction-safe chat representation.
 
 ## Core outcome
 
@@ -39,9 +63,31 @@ independent from `build-bilingual-docx`, which owns DOCX authoring and file QA.
   number, or a formula needs an RTL anchor. Prefer a visible Persian label when
   it does not change the requested wording. When the wording must begin with
   the LTR atom, prepend `RLM` and isolate each LTR atom with `LRI`/`PDI`.
-- Markdown bullet lists may be placed in an LTR container by the host. When
-  right alignment matters, replace `-` bullets with separate Persian
-  paragraphs headed by visible labels such as `قاعدهٔ اول:`.
+- Treat any Persian sentence containing an LTR atom as direction-sensitive,
+  not only sentences that start with one. Isolate every LTR atom when a
+  sentence contains multiple LTR atoms, punctuation around them, probable
+  line wrapping, or an LTR atom followed by a Persian tail or final verb.
+  Inline-code styling may preserve an atom's internal order, but it does not
+  establish the paragraph's RTL base direction.
+- `RLM` establishes an RTL anchor only in an auto-directed or already RTL
+  paragraph; it cannot override a host block whose CSS explicitly sets
+  `direction: ltr`. If inspection shows reversed continuation-line order in an
+  explicitly LTR container, use a whole-sentence RTL embedding/isolate as
+  defined in the reference, split the content into shorter labeled Persian
+  paragraphs, or use a controlled RTL render.
+- Do not use Markdown `-`, `*`, or `+` bullets—or native Markdown numbering—
+  for Persian-dominant lists by default. The host can keep the list container,
+  indentation, and generated `::marker` LTR even when each item begins with
+  Persian. This applies to top-level and nested lists.
+- Replace Persian Markdown lists with separate RTL-compatible paragraphs
+  headed by visible Persian labels such as `نتیجهٔ اول:`, `مرحلهٔ دوم:`, or
+  `علت:`. This is the default, not merely a fallback when the user has already
+  reported a defect.
+- If visible bullets are explicitly required, use a literal `•` inside each
+  RTL paragraph only after rendered inspection. If exact bullet placement or
+  nesting is required, select a controlled, screenshot-verified visual plus a
+  copyable labeled-paragraph alternative. Any deliverable visual is created
+  and validated by the appropriate primary or visual skill.
 - Do not use a fenced code block merely to stabilize an ordinary Persian
   sentence; code blocks are LTR containers.
 
@@ -103,8 +149,9 @@ independent from `build-bilingual-docx`, which owns DOCX authoring and file QA.
   may style headers and cells differently, and raw HTML may be escaped.
 - When exact alignment matters, render a controlled RTL table with explicit
   direction, fixed column order, identical header/cell alignment, and isolated
-  LTR spans. Inspect a screenshot before delivery and display the verified
-  image. Keep a textual or vertical alternative when copyability is required.
+  LTR spans through the appropriate primary or visual skill. Inspect a
+  screenshot before delivery and display the verified image. Keep a textual or
+  vertical alternative when copyability is required.
 
 ## Dates, formulas, and technical atoms
 
@@ -118,8 +165,24 @@ independent from `build-bilingual-docx`, which owns DOCX authoring and file QA.
 ## Conditional reference
 
 Read [references/rtl-rendering-patterns.md](references/rtl-rendering-patterns.md)
-before handling any sentence beginning with an LTR atom, Persian text inside a
-code block, arrow chain, or Persian/mixed table whose alignment is important.
+before handling any Persian list, any sentence containing an LTR atom, Persian
+text inside a code block, arrow chain, or Persian/mixed table whose alignment
+is important. Use
+[references/adversarial-qa-matrix.md](references/adversarial-qa-matrix.md)
+for regression testing after changing this skill or after a reported visual
+defect.
+
+## Per-message invocation gate
+
+Before sending any commentary or final response, check whether the visible
+message contains Persian/Farsi. If it does, apply this skill's rendering rules
+to that message regardless of which primary skill owns the task.
+
+For a Persian-dominant response, scan every proposed Markdown list before
+sending. Convert it to labeled Persian paragraphs unless right-side markers
+and RTL wrapping have been verified in the actual host. Then inspect mixed
+sentences containing inline code, two or more LTR atoms, or an LTR atom near a
+Persian sentence-final verb.
 
 ## Release check
 
@@ -134,5 +197,8 @@ Before sending a direction-sensitive response:
    surface, not merely in Markdown source.
 5. Confirm tone, terminology, quotations, links, citations, numeral style, and
    factual content still match the user's request and sources.
-6. If the host rendering remains ambiguous, switch to a vertical structure or
+6. Check both normal and narrow viewport widths when wrapping could occur.
+   A correct logical source that fails after line wrapping is a rendering
+   failure.
+7. If the host rendering remains ambiguous, switch to a vertical structure or
    a controlled, screenshot-verified visual rather than guessing.

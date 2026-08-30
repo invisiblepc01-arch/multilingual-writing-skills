@@ -1,7 +1,7 @@
 interface:
   display_name: "Persian and English Chat Writing"
-  short_description: "Render robust RTL/LTR multilingual chat text"
-  default_prompt: "Use $multilingual-chat-writing to write and visually verify Persian, English, or mixed-language content for direct chat display."
+  short_description: "Mandatory RTL-safe layer for every Persian chat response"
+  default_prompt: "Use $multilingual-chat-writing as a read-only response-layer companion for every user-visible assistant message containing Persian/Farsi, including commentary and final answers. Keep all artifact authoring and edits under the primary task skill."
 
 policy:
   allow_implicit_invocation: true
