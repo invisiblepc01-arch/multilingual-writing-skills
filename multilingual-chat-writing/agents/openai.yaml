@@ -1,0 +1,7 @@
+interface:
+  display_name: "Persian and English Chat Writing"
+  short_description: "Render robust RTL/LTR multilingual chat text"
+  default_prompt: "Use $multilingual-chat-writing to write and visually verify Persian, English, or mixed-language content for direct chat display."
+
+policy:
+  allow_implicit_invocation: true
