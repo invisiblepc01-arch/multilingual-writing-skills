@@ -16,7 +16,9 @@ Microsoft Word شامل متن فارسی راست‌به‌چپ، انگلیس�
 - قواعد تخصصی فهرست مطالب فارسی؛
 - کنترل هدر، فوتر، جدول و Story Partهای مستقل Word؛
 - ممیزی مستقیم OOXML؛
+- ممیزی سخت‌گیرانه ویژگی‌های Run، فونت، زبان و جهت؛
 - تولید سند آزمایشی دوزبانه؛
+- کنترل چرخه بازکردن، ذخیره و بازبینی فقط‌خواندنی در Word؛
 - کنترل سازگاری با Word 2016 تا Word 2024.
 
 ## نصب سریع
@@ -26,10 +28,10 @@ Skills قرار دهید:
 
 ```text
 Windows:
-%USERPROFILE%\.agents\skills\build-bilingual-docx
+%USERPROFILE%\.codex\skills\build-bilingual-docx
 
 macOS/Linux:
-$HOME/.agents/skills/build-bilingual-docx
+$HOME/.codex/skills/build-bilingual-docx
 ```
 
 فایل زیر باید مستقیماً وجود داشته باشد:
@@ -78,15 +80,23 @@ python scripts\harden_docx_bidi.py fixture_raw.docx fixture_hardened.docx --mode
 
 ```powershell
 python scripts\audit_docx_bidi.py fixture_hardened.docx --json fixture_audit.json
+python scripts\audit_docx_run_props.py fixture_hardened.docx --report fixture_run_audit.json
 ```
 
 نتیجه مطلوب شامل `"passed": true` و آرایه خالی `errors` است.
+
+آزمون دود کامل و ایزوله:
+
+```powershell
+python scripts\smoke_test.py
+```
 
 ## محدودیت مهم
 
 ممیزی XML جایگزین کنترل تصویری نیست. فقط زمانی می‌توان خروجی را
 «کنترل‌شده در Word 2024» نامید که نسخه نهایی واقعاً با Word 2024 باز یا رندر
-شده و همه صفحات آن بررسی شده باشند.
+شده و همه صفحات آن بررسی شده باشند. پس از آخرین ذخیره در Word باید سخت‌سازی و
+هر دو ممیزی دوباره اجرا شوند و کنترل نهایی Word به‌صورت فقط‌خواندنی باشد.
 
 ## مشارکت
 

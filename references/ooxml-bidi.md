@@ -8,7 +8,8 @@
 4. Lists and indents
 5. Story parts
 6. Mixed-language text
-7. Compatibility hazards
+7. Tables, headers, footers, and cover pages
+8. Compatibility hazards
 
 ## 1. Paragraph properties
 
@@ -91,7 +92,28 @@ Persian heading contract:
 The number is logically first and visually rightmost. The English token remains
 an LTR run.
 
-## 7. Compatibility hazards
+## 7. Tables, headers, footers, and cover pages
+
+Classify every table paragraph by its actual text instead of inheriting one
+alignment for the whole table:
+
+- Header cells: `w:jc=center`; set vertical cell alignment to center.
+- Any Persian/Arabic text: `w:bidi=1`, `w:jc=right`.
+- Pure Latin/English, URL, code, numeric, or mathematical content:
+  `w:bidi=0`, `w:jc=left`.
+
+For a mixed-language paragraph, the presence of Persian makes the paragraph
+RTL/right-aligned; keep its Latin fragments in explicit LTR runs. Center any
+header or footer that contains Persian, even when it also contains Latin text
+or a page-number field. Keep Persian body headings right-aligned.
+
+For book, manual, and reference-guide deliverables with a dedicated cover,
+reserve page 1 for the centered overall title in `B Titr` or `B Titr Bold`.
+Start TOC/front matter/body content on page 2, using a real page or section
+break. Recheck the page-1/page-2 transition and do not let `cantSplit` on long
+table rows create large empty areas; allow data rows to split when necessary.
+
+## 8. Compatibility hazards
 
 - LibreOffice, Google Docs, PDF converters, and Word may resolve bidi
   inheritance differently.

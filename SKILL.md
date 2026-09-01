@@ -38,11 +38,15 @@ correct layout from extracted text alone.
 10. Build TOCs deliberately. Read `references/toc-and-numbering.md` before
     creating or repairing a Persian TOC.
 11. Run `scripts/audit_docx_bidi.py` and fix every error.
-12. Render with Microsoft Word when Word fidelity is required. Otherwise render
+12. Treat a desktop Word save as a mutating build step. Read
+    `references/word-roundtrip.md`, harden Word's saved copy, and run the
+    paragraph- and run-level audits again.
+13. Render with Microsoft Word when Word fidelity is required. Otherwise render
     with LibreOffice and disclose the renderer. Inspect every page at 100%.
-13. Open the final file in the named Word version when available. Recheck
-    headers, first/last lines, wrapped lists, mixed-language headings, TOC
-    leaders, tables, and page breaks.
+14. Open the exact hardened deliverable read-only in the named Word version
+    when available. Recheck headers, first/last lines, wrapped lists,
+    mixed-language headings, TOC leaders, tables, and page breaks. Do not save
+    this verification copy; another save requires another hardening/audit pass.
 
 ## Deterministic tools
 
@@ -50,11 +54,16 @@ correct layout from extracted text alone.
   run, header/footer, style, and list-direction properties.
 - Run `scripts/audit_docx_bidi.py FILE --json REPORT.json` for a machine-readable
   release gate.
+- Run `scripts/audit_docx_run_props.py FILE --report REPORT.json` after any Word
+  save. Add `--require-toc` and `--require-page-fields` when applicable.
 - Run `scripts/make_bidi_fixture.py OUTPUT.docx` to generate an adversarial
   Persian/English test document.
+- Run `scripts/smoke_test.py` after changing any bundled script.
 
 Read `references/ooxml-bidi.md` before modifying XML or debugging Word-only
 failures. Read `references/qa-matrix.md` before release. Read
+`references/word-roundtrip.md` before using desktop Word to update or verify a
+deliverable. Read
 `references/portability.md` when the agent is not Codex/OpenAI or when tool
 availability differs.
 
@@ -62,6 +71,9 @@ availability differs.
 
 - The DOCX ZIP passes CRC validation and opens without repair warnings.
 - Every nonempty paragraph has an intentional `w:jc` and `w:bidi`.
+- Every visible Persian or Latin run has direct direction, language, and all
+  four font slots after the final Word save; Persian bold runs also have
+  `w:bCs`.
 - Persian headings begin visually at the right edge; their number is the
   rightmost heading token, followed by one space or ` - ` and the title.
 - No Persian list inherits a left indent.
@@ -72,6 +84,7 @@ availability differs.
 - Required LTR diagrams remain LTR.
 - No clipping, overlap, missing glyph, broken table, orphaned heading, or
   unexpected blank page remains in the inspected render.
+- The read-only Word render and every audit refer to the exact final DOCX.
 
 ## Honesty boundary
 

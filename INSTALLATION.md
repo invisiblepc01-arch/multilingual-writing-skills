@@ -25,23 +25,22 @@ build-bilingual-docx/build-bilingual-docx/SKILL.md
 Preferred current user location:
 
 ```text
-%USERPROFILE%\.agents\skills\build-bilingual-docx
+%USERPROFILE%\.codex\skills\build-bilingual-docx
 ```
 
 PowerShell:
 
 ```powershell
 $source = (Resolve-Path ".\build-bilingual-docx").Path
-$root = Join-Path $env:USERPROFILE ".agents\skills"
+$root = Join-Path $env:USERPROFILE ".codex\skills"
 New-Item -ItemType Directory -Force -Path $root | Out-Null
 Copy-Item -LiteralPath $source -Destination $root -Recurse
 ```
 
-Some compatible Codex Desktop installations may still discover personal
-skills under:
+Other Agent Skills-compatible engines may discover personal skills under:
 
 ```text
-%USERPROFILE%\.codex\skills\build-bilingual-docx
+%USERPROFILE%\.agents\skills\build-bilingual-docx
 ```
 
 Use only one location to avoid duplicate entries.
@@ -49,14 +48,14 @@ Use only one location to avoid duplicate entries.
 ### macOS and Linux
 
 ```bash
-mkdir -p "$HOME/.agents/skills"
-cp -R "/path/to/build-bilingual-docx" "$HOME/.agents/skills/"
+mkdir -p "$HOME/.codex/skills"
+cp -R "/path/to/build-bilingual-docx" "$HOME/.codex/skills/"
 ```
 
-Compatibility location for installations that still use the older path:
+Compatibility location for other Agent Skills-compatible engines:
 
 ```text
-$HOME/.codex/skills/build-bilingual-docx
+$HOME/.agents/skills/build-bilingual-docx
 ```
 
 Again, install only one copy.
@@ -121,6 +120,8 @@ python -m pip install -r requirements.txt
 python scripts/make_bidi_fixture.py fixture_raw.docx
 python scripts/harden_docx_bidi.py fixture_raw.docx fixture_hardened.docx --mode auto
 python scripts/audit_docx_bidi.py fixture_hardened.docx --json fixture_audit.json
+python scripts/audit_docx_run_props.py fixture_hardened.docx --report fixture_run_audit.json
+python scripts/smoke_test.py
 ```
 
 Open `fixture_hardened.docx` in Microsoft Word and verify:

@@ -73,11 +73,14 @@ build-bilingual-docx/
 │   ├── ooxml-bidi.md
 │   ├── portability.md
 │   ├── qa-matrix.md
-│   └── toc-and-numbering.md
+│   ├── toc-and-numbering.md
+│   └── word-roundtrip.md
 └── scripts/
     ├── audit_docx_bidi.py
+    ├── audit_docx_run_props.py
     ├── harden_docx_bidi.py
-    └── make_bidi_fixture.py
+    ├── make_bidi_fixture.py
+    └── smoke_test.py
 ```
 
 خطای متداول، ایجاد یک پوشه اضافی است:
@@ -92,32 +95,15 @@ build-bilingual-docx/build-bilingual-docx/SKILL.md
 
 ## ۴. نصب روی Windows برای استفاده شخصی در Codex
 
-### روش پیشنهادی مطابق ساختار جدید Codex
+### روش پیشنهادی برای Codex
 
 پوشه شخصی Skills را بسازید:
 
 ```text
-%USERPROFILE%\.agents\skills
+%USERPROFILE%\.codex\skills
 ```
 
 سپس کل پوشه `build-bilingual-docx` را در آن کپی کنید. مسیر نهایی باید این باشد:
-
-```text
-%USERPROFILE%\.agents\skills\build-bilingual-docx\SKILL.md
-```
-
-روش PowerShell:
-
-```powershell
-$source = (Resolve-Path ".\build-bilingual-docx").Path
-$destinationRoot = Join-Path $env:USERPROFILE ".agents\skills"
-New-Item -ItemType Directory -Force -Path $destinationRoot | Out-Null
-Copy-Item -LiteralPath $source -Destination $destinationRoot -Recurse
-```
-
-### مسیر سازگار با بعضی نسخه‌های Codex Desktop
-
-اگر برنامه شما Skill را از مسیر بالا شناسایی نکرد، مسیر زیر را نیز امتحان کنید:
 
 ```text
 %USERPROFILE%\.codex\skills\build-bilingual-docx\SKILL.md
@@ -132,7 +118,24 @@ New-Item -ItemType Directory -Force -Path $destinationRoot | Out-Null
 Copy-Item -LiteralPath $source -Destination $destinationRoot -Recurse
 ```
 
-از نصب هم‌زمان دو نسخه با نام یکسان در `.agents\skills` و `.codex\skills`
+### مسیر سازگار با موتورهای مبتنی بر Agent Skills
+
+اگر برنامه شما Skill را از مسیر بالا شناسایی نکرد، مسیر زیر را نیز امتحان کنید:
+
+```text
+%USERPROFILE%\.agents\skills\build-bilingual-docx\SKILL.md
+```
+
+روش PowerShell:
+
+```powershell
+$source = (Resolve-Path ".\build-bilingual-docx").Path
+$destinationRoot = Join-Path $env:USERPROFILE ".agents\skills"
+New-Item -ItemType Directory -Force -Path $destinationRoot | Out-Null
+Copy-Item -LiteralPath $source -Destination $destinationRoot -Recurse
+```
+
+از نصب هم‌زمان دو نسخه با نام یکسان در `.codex\skills` و `.agents\skills`
 خودداری کنید؛ وجود دو نسخه می‌تواند باعث نمایش Skill تکراری یا استفاده از نسخه
 نامشخص شود.
 
@@ -143,20 +146,20 @@ Copy-Item -LiteralPath $source -Destination $destinationRoot -Recurse
 فایل ZIP را استخراج کنید و پوشه Skill را در مسیر شخصی زیر قرار دهید:
 
 ```text
-$HOME/.agents/skills/build-bilingual-docx/SKILL.md
+$HOME/.codex/skills/build-bilingual-docx/SKILL.md
 ```
 
 نمونه فرمان:
 
 ```bash
-mkdir -p "$HOME/.agents/skills"
-cp -R "/path/to/build-bilingual-docx" "$HOME/.agents/skills/"
+mkdir -p "$HOME/.codex/skills"
+cp -R "/path/to/build-bilingual-docx" "$HOME/.codex/skills/"
 ```
 
-برای نسخه‌هایی که هنوز از مسیر قدیمی Codex استفاده می‌کنند، مسیر جایگزین:
+برای موتورهای سازگار با ساختار Agent Skills، مسیر جایگزین:
 
 ```text
-$HOME/.codex/skills/build-bilingual-docx/SKILL.md
+$HOME/.agents/skills/build-bilingual-docx/SKILL.md
 ```
 
 فقط یکی از دو مسیر را انتخاب کنید.
@@ -239,6 +242,12 @@ python ".\scripts\harden_docx_bidi.py" `
 python ".\scripts\audit_docx_bidi.py" `
   ".\fixture_hardened.docx" `
   --json ".\fixture_audit.json"
+
+python ".\scripts\audit_docx_run_props.py" `
+  ".\fixture_hardened.docx" `
+  --report ".\fixture_run_audit.json"
+
+python ".\scripts\smoke_test.py"
 ```
 
 نتیجه مطلوب:
@@ -295,7 +304,7 @@ python -m pip install python-docx lxml
 2. پوشه اضافی تو در تو را حذف کنید؛
 3. نام پوشه را `build-bilingual-docx` نگه دارید؛
 4. برنامه را کاملاً ببندید و باز کنید؛
-5. مسیر `.agents\skills` و در صورت نیاز مسیر سازگار `.codex\skills` را کنترل
+5. مسیر `.codex\skills` و در صورت نیاز مسیر سازگار `.agents\skills` را کنترل
    کنید؛
 6. بررسی کنید Skill در `config.toml` غیرفعال نشده باشد.
 

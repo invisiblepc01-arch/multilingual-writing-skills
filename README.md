@@ -39,11 +39,14 @@ This project makes those requirements explicit and testable.
 │   ├── ooxml-bidi.md
 │   ├── portability.md
 │   ├── qa-matrix.md
-│   └── toc-and-numbering.md
+│   ├── toc-and-numbering.md
+│   └── word-roundtrip.md
 ├── scripts/
 │   ├── audit_docx_bidi.py
+│   ├── audit_docx_run_props.py
 │   ├── harden_docx_bidi.py
-│   └── make_bidi_fixture.py
+│   ├── make_bidi_fixture.py
+│   └── smoke_test.py
 ├── tests/test_workflow.py
 ├── INSTALLATION.md
 └── INSTALLATION.fa.md
@@ -55,8 +58,8 @@ Clone or download this repository. Put the repository folder in your personal
 skills directory:
 
 ```text
-Windows: %USERPROFILE%\.agents\skills\build-bilingual-docx
-macOS/Linux: $HOME/.agents/skills/build-bilingual-docx
+Windows: %USERPROFILE%\.codex\skills\build-bilingual-docx
+macOS/Linux: $HOME/.codex/skills/build-bilingual-docx
 ```
 
 The final path must contain `SKILL.md` directly:
@@ -108,6 +111,7 @@ Audit the result:
 
 ```bash
 python scripts/audit_docx_bidi.py fixture_hardened.docx --json fixture_audit.json
+python scripts/audit_docx_run_props.py fixture_hardened.docx --report fixture_run_audit.json
 ```
 
 A successful audit exits with code `0` and reports:
@@ -119,12 +123,20 @@ A successful audit exits with code `0` and reports:
 }
 ```
 
+Run the complete isolated smoke test:
+
+```bash
+python scripts/smoke_test.py
+```
+
 ## Validation policy
 
 Structural OOXML validation is necessary but not sufficient. A document must
 also be rendered and inspected in its target engine. Do not claim that a file
 is “Word 2024 verified” unless the final DOCX was actually opened or rendered
-by Word 2024 and every page was reviewed.
+by Word 2024 and every page was reviewed. Follow the post-Word hardening and
+read-only verification sequence in [word-roundtrip.md](references/word-roundtrip.md)
+so a later Word save cannot silently invalidate the evidence.
 
 ## Supported environments
 

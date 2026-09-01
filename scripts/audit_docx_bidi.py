@@ -17,6 +17,36 @@ def attr(node, name):
     return None if node is None else node.get(W + name)
 
 
+def first_table_row_paragraph(p):
+    tr = p.getparent()
+    while tr is not None and tr.tag != W + "tr":
+        tr = tr.getparent()
+    if tr is None:
+        return False
+    tbl = tr.getparent()
+    while tbl is not None and tbl.tag != W + "tbl":
+        tbl = tbl.getparent()
+    if tbl is None:
+        return False
+    rows = [child for child in tbl if child.tag == W + "tr"]
+    return bool(rows) and rows[0] is tr
+
+
+def inside_table_cell(p):
+    node = p.getparent()
+    while node is not None:
+        if node.tag == W + "tc":
+            return True
+        node = node.getparent()
+    return False
+
+
+def paragraph_style(p):
+    ppr = p.find("w:pPr", NS)
+    style = None if ppr is None else ppr.find("w:pStyle", NS)
+    return attr(style, "val") or ""
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("docx", type=Path)
@@ -52,6 +82,23 @@ def main():
                         errors.append({"part": part, "paragraph": i, "issue": "Persian paragraph is not RTL", "text": text[:80]})
                     if FA.search(text) and attr(jc, "val") == "left":
                         errors.append({"part": part, "paragraph": i, "issue": "Persian paragraph is left aligned", "text": text[:80]})
+                    is_header_footer = bool(re.match(r"word/(header|footer)\d+\.xml$", part))
+                    is_table_header = inside_table_cell(p) and first_table_row_paragraph(p)
+                    is_table_body = inside_table_cell(p) and not is_table_header
+                    if is_header_footer and FA.search(text) and attr(jc, "val") != "center":
+                        errors.append({"part": part, "paragraph": i, "issue": "Persian-containing header/footer is not centered", "text": text[:80]})
+                    if is_table_header and attr(jc, "val") != "center":
+                        errors.append({"part": part, "paragraph": i, "issue": "table header is not centered", "text": text[:80]})
+                    if is_table_body and FA.search(text) and attr(jc, "val") != "right":
+                        errors.append({"part": part, "paragraph": i, "issue": "Persian table-body paragraph is not right aligned", "text": text[:80]})
+                    if is_table_body and not FA.search(text):
+                        if attr(jc, "val") != "left":
+                            errors.append({"part": part, "paragraph": i, "issue": "English/numeric table-body paragraph is not left aligned", "text": text[:80]})
+                        if attr(bidi, "val") not in {"0", "false", "off"}:
+                            errors.append({"part": part, "paragraph": i, "issue": "English/numeric table-body paragraph is not explicitly LTR", "text": text[:80]})
+                    style = paragraph_style(p).casefold()
+                    if FA.search(text) and style.startswith("heading") and attr(jc, "val") != "right":
+                        errors.append({"part": part, "paragraph": i, "issue": "Persian heading is not right aligned", "text": text[:80]})
                     ind = None if ppr is None else ppr.find("w:ind", NS)
                     if FA.search(text) and ind is not None and attr(ind, "left") not in {None, "0"}:
                         warnings.append({"part": part, "paragraph": i, "issue": "Persian paragraph has left indent", "text": text[:80]})
