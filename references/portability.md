@@ -9,7 +9,9 @@ Minimum runtime:
 - Python 3.10+
 - `python-docx`
 - `lxml`
-- Microsoft Word for authoritative Word rendering, or LibreOffice for fallback
+- Microsoft Word 2024 for authoritative rendering when installed; otherwise
+  use the newest available desktop Word. LibreOffice is a fallback only after
+  Word absence or an unrecoverable Word automation failure is recorded.
 
 Equivalent agent procedure:
 
@@ -17,7 +19,11 @@ Equivalent agent procedure:
 2. Load only references relevant to the request.
 3. Run bundled scripts from a writable working directory.
 4. Never modify a source file in place without a backup.
-5. Run the audit and visual release gates.
+5. Detect Word before choosing a renderer. Never select LibreOffice merely
+   because it is easier to automate.
+6. Run the structural audits and the target-Word visual release gates.
+7. When only LibreOffice is available, label the artifact LibreOffice-verified;
+   never claim Word compatibility as tested.
 
 Tool mappings:
 

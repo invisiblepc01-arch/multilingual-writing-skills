@@ -89,12 +89,32 @@ def audit(path: Path, *, require_toc: bool, require_page_fields: bool):
                         continue
                     stats["visible_runs"] += 1
                     if has_fa and has_latin_or_digit:
-                        warnings.append(
+                        errors.append(
                             {
                                 "part": part_name,
                                 "paragraph": p_index,
                                 "run": r_index,
-                                "warning": "mixed strong directions in one run",
+                                "error": "mixed strong directions in one run",
+                                "text": text[:100],
+                            }
+                        )
+                    if re.match(r"^[\u064B-\u065F\u0670]", text):
+                        errors.append(
+                            {
+                                "part": part_name,
+                                "paragraph": p_index,
+                                "run": r_index,
+                                "error": "run begins with a combining mark",
+                                "text": text[:100],
+                            }
+                        )
+                    if "\u25CC" in text:
+                        errors.append(
+                            {
+                                "part": part_name,
+                                "paragraph": p_index,
+                                "run": r_index,
+                                "error": "literal dotted-circle character remains",
                                 "text": text[:100],
                             }
                         )
