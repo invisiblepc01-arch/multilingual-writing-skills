@@ -25,10 +25,13 @@ Use this order when Word fidelity is a release requirement:
    and require byte-identical page images; a differing page is a release failure,
    not a warning. If any comparison differs, save an updated working copy in
    Word, harden it, and repeat from step 3.
-7. Inspect every page from the exact hardened deliverable. Check physical right
+7. Run `scripts/audit_word_table_order.ps1` against the same exact hardened
+   output in the target Word version. It must enumerate every table and report
+   zero failures; table 1 is not a representative substitute for later tables.
+8. Inspect every page from the exact hardened deliverable. Check physical right
    alignment, Persian/Latin boundary spacing, table column identity/order, and
    attached hamza/ezafe glyphs; XML-only checks are insufficient.
-8. If another Word save is necessary, repeat hardening and both audits.
+9. If another Word save is necessary, repeat hardening and all audits.
 
 Prefer Word 2024 when installed, otherwise use the newest available Word.
 LibreOffice is allowed only after Word is confirmed unavailable or unable to

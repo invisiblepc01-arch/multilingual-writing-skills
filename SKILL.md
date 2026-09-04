@@ -61,8 +61,10 @@ correct layout from extracted text alone.
 8. For every Persian or mixed table, keep semantic column 1 as the first cell
    in each row and set `w:tblPr/w:bidiVisual=1`, so Word displays column 1 at
    the far right, column 2 immediately to its left, and the last column at the
-   far left. Do not reverse only the header labels or rely on authoring-tool
-   column order. Verify the rendered Word table against row data, not just XML.
+   far left. Apply this rule independently to every table in the document; a
+   correct first table never licenses skipping later tables. Do not reverse
+   only the header labels or rely on authoring-tool column order. Verify every
+   table in Word by physical column position, not just by XML or one sample.
    Every Persian/mixed table-body paragraph remains RTL/right; pure Latin or
    numeric table-body paragraphs are LTR/left. The first/header row follows the
    mandatory centered-header exception above. Use light gray `#D9D9D9` outer
@@ -111,9 +113,18 @@ correct layout from extracted text alone.
   require page-image hashes, page counts, and field snapshots to match. Pass
   `-PdfToPpmPath` when the converter is not on `PATH`. A nonzero exit or
   `stable=false` blocks release.
+- Run `scripts/audit_word_table_order.ps1 -Docx FILE -Report REPORT.json` in
+  the target Microsoft Word version. It opens the exact deliverable read-only
+  and fails unless logical header cell 1 is physically rightmost, every later
+  header cell proceeds monotonically leftward, and the final cell is leftmost
+  in every table. A failure in any table blocks release.
 - Run `scripts/make_bidi_fixture.py OUTPUT.docx` to generate an adversarial
   Persian/English test document.
 - Run `scripts/smoke_test.py` after changing any bundled script.
+- After changing the Word table-order auditor, run
+  `tests/test_word_table_order.ps1 -PythonPath PYTHON -WorkingDirectory DIR`
+  on a Windows host with Word. The hardened RTL fixture must pass and the raw
+  LTR negative-control fixture must fail.
 
 Read `references/ooxml-bidi.md` before modifying XML or debugging Word-only
 failures. Read `references/qa-matrix.md` before release. Read
@@ -147,7 +158,10 @@ availability differs.
   Persian/Latin boundaries retain visible spacing in Word.
 - In any document designated Persian or Persian/English, every table has
   `w:bidiVisual=1`; Word shows semantic column 1 at the far right and the final
-  column at the far left on every page. A separate LTR-only document is outside
+  column at the far left on every page. The Word position audit passes for the
+  complete table count, with zero failed tables; checking only the first table,
+  a representative table, or the presence of `w:bidiVisual` is insufficient.
+  A separate LTR-only document is outside
   this table policy; do not silently exempt individual tables inside a Persian
   deliverable.
 - Title paragraphs have no unintended border or decorative rule.

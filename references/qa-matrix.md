@@ -22,6 +22,10 @@
 - In every Persian or Persian/English deliverable, every table has
   `w:bidiVisual=1`; semantic cell 1 remains XML cell 1 and is rendered at the
   far right in Word. Do not silently exempt a Latin-only table inside it.
+- `scripts/audit_word_table_order.ps1` reports the exact document table count,
+  zero failed tables, and monotonically decreasing physical X positions from
+  logical header cell 1 through the final header cell for every table. Checking
+  only table 1 or only the OOXML property is a release failure.
 - No run begins with a combining mark. Every `U+0647 U+0654` grapheme is wholly
   inside one Persian run with one font/language/direction and renders without a
   dotted circle. Do not substitute `U+06C0` without explicit user approval.
@@ -54,7 +58,9 @@
   user explicitly requested another alignment.
 - For every Persian/mixed table, compare a complete header/data row in the Word
   render: semantic column 1 is far right, later columns proceed leftward, and
-  the last column is far left. Checking only cell alignment is insufficient.
+  the last column is far left. Perform this comparison for every table, not a
+  sample, and confirm the data remains under the correct headers. Checking only
+  cell alignment is insufficient.
 - Pages 1 and 2 have been inspected separately for cover isolation, orientation
   transition, table start, bad row pagination, and large blank gaps.
 - TOC order, leaders, wrapping, page numbers, and page breaks are correct.

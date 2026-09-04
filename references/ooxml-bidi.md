@@ -154,8 +154,11 @@ text. LTR-only documents use the separate LTR policy:
 Keep semantic column 1 as XML cell 1 in every row. In Word it must appear at the
 far right; subsequent columns proceed leftward and the final semantic column is
 far left. Do not manually reverse only one row, header labels, or extracted
-data. Validate column identity in a Word screenshot by comparing at least one
-complete header/data row. Set table outer and inner borders explicitly to
+data. Validate every table, not only the first or a sample. Use Word's physical
+horizontal positions to prove that logical header cell 1 is rightmost, each
+subsequent logical header cell is farther left, and the final cell is leftmost;
+then inspect a complete header/data row in the Word render to confirm that data
+still belongs to the correct header. Set table outer and inner borders explicitly to
 `D9D9D9` unless the user supplies another design.
 
 For book, manual, and reference-guide deliverables with a dedicated cover,

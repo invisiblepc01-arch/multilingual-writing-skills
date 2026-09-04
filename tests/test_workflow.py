@@ -25,6 +25,20 @@ def run(*args):
     )
 
 
+def test_required_release_scripts_are_present():
+    assert (SCRIPTS / "verify_word_render.ps1").is_file()
+    assert (SCRIPTS / "audit_word_table_order.ps1").is_file()
+    table_audit = (SCRIPTS / "audit_word_table_order.ps1").read_text(encoding="utf-8")
+    assert "for ($tableIndex = 1; $tableIndex -le $document.Tables.Count; $tableIndex++)" in table_audit
+    assert "monotonicRightToLeft" in table_audit
+    assert "failedTableCount" in table_audit
+    assert ".Duplicate" in table_audit
+    assert ".Collapse(1)" in table_audit
+    assert "directionIsRtl" in table_audit
+    assert "sourceSha256Before" in table_audit
+    assert (ROOT / "tests" / "test_word_table_order.ps1").is_file()
+
+
 def test_fixture_harden_and_audit(tmp_path):
     raw = tmp_path / "raw.docx"
     hardened = tmp_path / "hardened.docx"
