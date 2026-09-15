@@ -108,6 +108,13 @@ def normalize_word_ezafe(p, mode="preserve"):
     previous = None
     for node in text_nodes:
         value = node.text or ""
+        # The standalone U+06C0 glyph ("ۀ") is not equivalent to the
+        # requested Persian ezafe sequence U+0647 U+0654 ("هٔ").  Normalize
+        # legacy/precomposed input back to the explicit sequence before
+        # repairing run boundaries so Word 2024 receives the intended code
+        # points and keeps them in one run.
+        if mode == "preserve":
+            value = value.replace(HEH_WITH_YEH_ABOVE, HEH + COMBINING_HAMZA_ABOVE)
         if mode == "precomposed":
             value = value.replace(HEH + COMBINING_HAMZA_ABOVE, HEH_WITH_YEH_ABOVE)
         if value.startswith(COMBINING_HAMZA_ABOVE) and previous is not None:
