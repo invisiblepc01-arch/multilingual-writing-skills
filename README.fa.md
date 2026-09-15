@@ -50,7 +50,7 @@ build-bilingual-docx/SKILL.md
 ```text
 $build-bilingual-docx
 از این متن یک فایل Word فارسی استاندارد با تیترهای شماره‌دار، فهرست مطالب RTL
-و هدر راست‌چین بساز.
+و سربرگ یکپارچهٔ وسط‌چین بساز.
 ```
 
 فراخوانی ضمنی نیز به‌صورت پیش‌فرض فعال است؛ بنابراین درخواست عادی تولید یا
@@ -83,6 +83,18 @@ python scripts\audit_docx_bidi.py fixture_hardened.docx --json fixture_audit.jso
 python scripts\audit_docx_run_props.py fixture_hardened.docx --report fixture_run_audit.json
 ```
 
+برای تراز استاندارد Justify در متن بدنهٔ معمولی فارسی:
+
+```powershell
+python scripts\harden_docx_bidi.py fixture_raw.docx fixture_justified.docx --mode auto --body-alignment justify --rtl-right-jc start
+python scripts\audit_docx_bidi.py fixture_justified.docx --json fixture_justify_audit.json --body-alignment justify --rtl-right-jc start
+powershell -File scripts\audit_word_effective_alignment.ps1 -Docx fixture_justified.docx -Report fixture_word_alignment.json -BodyAlignment justify
+```
+
+این حالت ابتدا RTL و سپس Justify را اعمال می‌کند، سطر پایانی ناقص را نمی‌کشد و
+از کشیده‌شدن سطرهای پایان‌یافته با `Shift+Enter` جلوگیری می‌کند. تیترها، فهرست،
+جدول‌ها، سربرگ و پابرگ قواعد مستقل خود را حفظ می‌کنند.
+
 نتیجه مطلوب شامل `"passed": true` و آرایه خالی `errors` است.
 
 آزمون دود کامل و ایزوله:
@@ -95,7 +107,8 @@ python scripts\smoke_test.py
 
 ممیزی XML جایگزین کنترل تصویری نیست. فقط زمانی می‌توان خروجی را
 «کنترل‌شده در Word 2024» نامید که نسخه نهایی واقعاً با Word 2024 باز یا رندر
-شده و همه صفحات آن بررسی شده باشند. پس از آخرین ذخیره در Word باید سخت‌سازی و
+شده و دامنهٔ بصری درخواستی بررسی شده باشد. نمونه‌گیری چند صفحه فقط با درخواست
+صریح کاربر مجاز است و ممیزی خودکار کل سند همچنان الزامی است. پس از آخرین ذخیره در Word باید سخت‌سازی و
 هر دو ممیزی دوباره اجرا شوند و کنترل نهایی Word به‌صورت فقط‌خواندنی باشد.
 
 ## مشارکت

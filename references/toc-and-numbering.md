@@ -5,7 +5,8 @@
 - Use hierarchical meaningful numbers: `۱`, `۱.۱`, `۱.۱.۱`.
 - Put the number at the visual far right.
 - Follow it with one space or ` - `, then the title.
-- Set the whole paragraph to `w:bidi=1` and `w:jc=right`.
+- Set the whole paragraph to `w:bidi=1` and the target profile's proven
+  physical-right value (`w:jc=start` on the validated Word 2024 profile).
 - Split English title spans into LTR runs.
 
 ## Dynamic TOC

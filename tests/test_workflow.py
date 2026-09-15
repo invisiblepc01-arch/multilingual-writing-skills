@@ -37,6 +37,7 @@ def test_required_release_scripts_are_present():
     assert "directionIsRtl" in table_audit
     assert "sourceSha256Before" in table_audit
     assert (ROOT / "tests" / "test_word_table_order.ps1").is_file()
+    assert (SCRIPTS / "audit_word_effective_alignment.ps1").is_file()
 
 
 def test_fixture_harden_and_audit(tmp_path):
@@ -65,6 +66,7 @@ def test_fixture_harden_and_audit(tmp_path):
     with zipfile.ZipFile(hardened) as archive:
         document = etree.fromstring(archive.read("word/document.xml"))
         styles = etree.fromstring(archive.read("word/styles.xml"))
+        header = etree.fromstring(archive.read("word/header1.xml"))
 
     assert not styles.xpath(
         './/w:style[@w:styleId="Title"]/w:pPr/w:pBdr', namespaces=NS
@@ -72,7 +74,7 @@ def test_fixture_harden_and_audit(tmp_path):
     centered = document.xpath(
         './/w:p[contains(string(.), "نباید وسط‌چین")]', namespaces=NS
     )[0]
-    assert centered.find("w:pPr/w:jc", NS).get(f"{{{W}}}val") == "right"
+    assert centered.find("w:pPr/w:jc", NS).get(f"{{{W}}}val") == "start"
     assert centered.find("w:pPr/w:bidi", NS).get(f"{{{W}}}val") == "1"
 
     first_table = document.xpath(".//w:tbl", namespaces=NS)[0]
@@ -100,6 +102,51 @@ def test_fixture_harden_and_audit(tmp_path):
     ]
     assert any("ه\u0654" in value for value in ezafe_runs)
     assert all(not value.startswith("\u0654") for value in ezafe_runs)
+    title = document.xpath('.//w:p[w:pPr/w:pStyle[@w:val="Title"]]', namespaces=NS)[0]
+    assert title.find("w:pPr/w:jc", NS).get(f"{{{W}}}val") == "center"
+    assert header.xpath("string(.//w:p/w:pPr/w:jc/@w:val)", namespaces=NS) == "center"
+
+
+def test_justify_body_policy_and_word2024_start_mapping(tmp_path):
+    raw = tmp_path / "raw.docx"
+    hardened = tmp_path / "justified.docx"
+    report = tmp_path / "justify-audit.json"
+    run(SCRIPTS / "make_bidi_fixture.py", raw)
+    run(
+        SCRIPTS / "harden_docx_bidi.py",
+        raw,
+        hardened,
+        "--mode",
+        "auto",
+        "--body-alignment",
+        "justify",
+        "--rtl-right-jc",
+        "start",
+    )
+    run(
+        SCRIPTS / "audit_docx_bidi.py",
+        hardened,
+        "--json",
+        report,
+        "--body-alignment",
+        "justify",
+        "--rtl-right-jc",
+        "start",
+    )
+    assert json.loads(report.read_text(encoding="utf-8"))["passed"] is True
+    with zipfile.ZipFile(hardened) as archive:
+        document = etree.fromstring(archive.read("word/document.xml"))
+        settings = etree.fromstring(archive.read("word/settings.xml"))
+    body = document.xpath('.//w:p[contains(string(.), "این یک پاراگراف")]', namespaces=NS)[0]
+    heading2 = document.xpath('.//w:p[w:pPr/w:pStyle[@w:val="Heading2"]]', namespaces=NS)[0]
+    table_body = document.xpath('.//w:tbl[1]/w:tr[2]/w:tc[2]/w:p', namespaces=NS)[0]
+    numbered = document.xpath('.//w:p[w:pPr/w:pStyle[@w:val="ListNumber"]]', namespaces=NS)[0]
+    assert body.find("w:pPr/w:jc", NS).get(f"{{{W}}}val") == "both"
+    assert heading2.find("w:pPr/w:jc", NS).get(f"{{{W}}}val") == "start"
+    assert table_body.find("w:pPr/w:jc", NS).get(f"{{{W}}}val") == "start"
+    assert numbered.find("w:pPr/w:jc", NS).get(f"{{{W}}}val") == "start"
+    assert settings.find("w:compat/w:doNotExpandShiftReturn", NS) is not None
+    assert len(body.getroottree().xpath('.//w:p[contains(string(.), "شکست دستی")]//w:br', namespaces=NS)) == 1
 
 
 def test_explicit_precomposed_ezafe_mode(tmp_path):

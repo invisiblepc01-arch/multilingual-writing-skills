@@ -124,13 +124,21 @@ python scripts/audit_docx_run_props.py fixture_hardened.docx --report fixture_ru
 python scripts/smoke_test.py
 ```
 
+Optional user-requested Justify policy:
+
+```bash
+python scripts/harden_docx_bidi.py fixture_raw.docx fixture_justified.docx --mode auto --body-alignment justify --rtl-right-jc start
+python scripts/audit_docx_bidi.py fixture_justified.docx --json fixture_justify_audit.json --body-alignment justify --rtl-right-jc start
+powershell -File scripts/audit_word_effective_alignment.ps1 -Docx fixture_justified.docx -Report fixture_word_alignment.json -BodyAlignment justify
+```
+
 Open `fixture_hardened.docx` in Microsoft Word and verify:
 
-- Persian headings and numbers are anchored on the right;
-- Persian body text is RTL and right aligned;
+- primary titles are centered and subordinate Persian headings are anchored on the right;
+- Persian body text is RTL and matches the requested right/Justify policy;
 - English tokens are not reversed;
 - list markers appear on the right;
-- headers are right anchored;
+- unified headers/footers are centered; split pieces retain their independent right/left roles;
 - tables and footers remain readable.
 
 ## 7. Troubleshooting

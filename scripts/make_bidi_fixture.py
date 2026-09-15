@@ -3,7 +3,7 @@ import argparse
 from pathlib import Path
 
 from docx import Document
-from docx.enum.text import WD_ALIGN_PARAGRAPH
+from docx.enum.text import WD_ALIGN_PARAGRAPH, WD_BREAK
 from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
 
@@ -31,6 +31,9 @@ def main():
     ezafe.add_run("تجربه")
     ezafe.add_run("\u0654 پروژه")
     doc.add_paragraph("English paragraph with Persian واژه and punctuation (test).")
+    manual_break = doc.add_paragraph("سطر نخست با شکست دستی")
+    manual_break.add_run().add_break(WD_BREAK.LINE)
+    manual_break.add_run("سطر دوم باید بدون کشیدگی نامعمول باقی بماند")
     doc.add_heading("۱.۱ - عنوان فارسی با English Span", level=2)
     doc.add_paragraph("مرحله نخست", style="List Number")
     doc.add_paragraph("مرحله دوم با عبارت Save As و کلید Ctrl+S", style="List Number")

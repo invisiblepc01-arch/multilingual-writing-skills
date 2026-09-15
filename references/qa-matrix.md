@@ -6,19 +6,24 @@
 - Document opens without repair prompt.
 - Styles, numbering, headers, footers, fields, images, and tables are present.
 - Every nonempty paragraph has direct alignment and direction. Every paragraph
-  containing Persian is `w:bidi=1` and `w:jc=right`; centered or justified
-  Persian fails except for the mandatory table-header role below.
+  containing Persian is `w:bidi=1`; alignment then matches its declared role.
+  In Justify mode, only whitelisted ordinary-body styles are `w:jc=both`, and
+  `w:compat/w:doNotExpandShiftReturn` is present.
 - Every nonempty paragraph in the first row of every table is directly
   `w:jc=center`, for Persian, Latin, numeric, and mixed text; Persian/mixed
   headers keep `w:bidi=1`, pure Latin headers keep `w:bidi=0`, and the cells are
   vertically centered.
-- Every nonempty paragraph below the first row is never centered: any Persian
-  or mixed content is directly `w:bidi=1` and `w:jc=right`; English-only,
+- Every nonempty paragraph below the first row is never centered or justified:
+  any Persian or mixed content is directly `w:bidi=1` and the target profile's
+  physical-right value (`start` on validated Word 2024); English-only,
   digits-only, or LTR alphanumeric content is directly `w:bidi=0` and
   `w:jc=left`.
 - All Persian runs have RTL/language/font properties; English runs remain LTR.
 - After the final Word save, every visible run has all four direct font slots;
   Persian bold runs also have `w:bCs`.
+- The effective Word direction/alignment audit checks every reachable paragraph
+  on the exact final hash and reports zero failures; RTL-only or alignment-only
+  audits cannot satisfy this gate.
 - In every Persian or Persian/English deliverable, every table has
   `w:bidiVisual=1`; semantic cell 1 remains XML cell 1 and is rendered at the
   far right in Word. Do not silently exempt a Latin-only table inside it.
@@ -43,9 +48,8 @@
 ## Visual, every page at 100%
 
 - Page size, margins, header/footer distance, and section breaks are correct.
-- Any header/footer containing Persian is right-aligned unless the user
-  explicitly requested centering; mixed Latin runs and page-number fields
-  remain readable.
+- A unified header/footer is centered. In a split layout, its independent RTL
+  right piece and LTR/number left piece remain separated and correctly aligned.
 - Persian body headings are right-anchored, numbered correctly, and kept with
   following text.
 - For a dedicated cover, page 1 contains the centered `B Titr`/`B Titr Bold`
@@ -53,7 +57,8 @@
 - Body endings align at the right margin; wrapped lines remain coherent.
 - List markers sit on the right and wrapped lines align under item text.
 - Tables fit the page, repeat headers when needed, and contain no clipped cells.
-- Each header or body cell paragraph containing Persian is RTL/right; pure
+- Each header or body cell paragraph containing Persian is RTL/right and never
+  receives body Justify; pure
   English/Latin, URL, numeric, and mathematical content is LTR/left unless the
   user explicitly requested another alignment.
 - For every Persian/mixed table, compare a complete header/data row in the Word
@@ -89,7 +94,9 @@ OOXML defect.
 For Word-targeted release, use this exact evidence chain: Word update/save on a
 working copy, harden, both audits, read-only Word reopen/export without field
 updates, a second read-only export with in-memory field updates, comparison of
-page count and visible TOC/PAGE/NUMPAGES results, then every-page inspection.
+page count and visible TOC/PAGE/NUMPAGES results, then the combined effective
+direction/alignment audit, full structural checks, and visual inspection of
+every page or the representative pages explicitly requested by the user.
 Any mismatch or later save invalidates the release evidence and requires another
 save/harden/audit cycle.
 

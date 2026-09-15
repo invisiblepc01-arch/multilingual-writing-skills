@@ -340,6 +340,36 @@ def current_alignment(p):
     return None if jc is None else jc.get(qn("w:val"))
 
 
+def normalized_style_name(p):
+    style = p.style
+    return "" if style is None else (style.name or "").casefold().replace(" ", "")
+
+
+def body_alignment_for(p, mode, body_alignment, rtl_right_jc, justify_styles):
+    text = text_of(p).strip()
+    rtl = mode == "rtl" or (mode == "auto" and bool(FA.search(text)))
+    style = normalized_style_name(p)
+    if style in {"title", "heading1"}:
+        return "center"
+    if rtl and style.startswith("heading"):
+        return rtl_right_jc
+    if rtl and body_alignment == "justify" and style in justify_styles:
+        return "both"
+    if rtl:
+        return rtl_right_jc
+    return "left"
+
+
+def ensure_do_not_expand_shift_return(doc):
+    settings = doc.settings.element
+    compat = settings.find(qn("w:compat"))
+    if compat is None:
+        compat = OxmlElement("w:compat")
+        settings.append(compat)
+    if compat.find(qn("w:doNotExpandShiftReturn")) is None:
+        compat.append(OxmlElement("w:doNotExpandShiftReturn"))
+
+
 def process_paragraph(p, mode, ezafe_mode="preserve", force_alignment=None):
     normalize_word_ezafe(p, ezafe_mode)
     ensure_script_boundary_spacing(p)
@@ -347,9 +377,8 @@ def process_paragraph(p, mode, ezafe_mode="preserve", force_alignment=None):
     if not text:
         return
     rtl = mode == "rtl" or (mode == "auto" and bool(FA.search(text)))
-    # Persian and mixed paragraphs must be physically right-aligned. Preserve a
-    # centered pure-Latin paragraph only; Persian centering requires an explicit
-    # force_alignment requested by the caller/user.
+    # Alignment is role-driven. The caller may request physical right, standard
+    # Justify, or an explicit centered exception after paragraph RTL is set.
     alignment = force_alignment
     if alignment is None and not rtl and mode == "auto" and current_alignment(p) == "center":
         alignment = "center"
@@ -372,12 +401,40 @@ def main():
     ap.add_argument("output", type=Path)
     ap.add_argument("--mode", choices=("auto", "rtl", "ltr"), default="auto")
     ap.add_argument(
+        "--body-alignment",
+        choices=("right", "justify"),
+        default="right",
+        help="Use standard Word Justify only for Persian/mixed body prose outside tables.",
+    )
+    ap.add_argument(
+        "--justify-style",
+        action="append",
+        default=[],
+        help="Repeat for each ordinary body style eligible for Justify; defaults to Normal/Body Text.",
+    )
+    ap.add_argument(
+        "--rtl-right-jc",
+        choices=("right", "start"),
+        default="start",
+        help="OOXML value proven by the target Word build to render physical right alignment.",
+    )
+    ap.add_argument(
+        "--header-footer-alignment",
+        choices=("center", "right"),
+        default="center",
+        help="Unified header/footer paragraphs are centered by default; split layouts require role-specific authoring.",
+    )
+    ap.add_argument(
         "--ezafe-mode",
         choices=("preserve", "precomposed"),
         default="preserve",
         help="Use precomposed only with explicit approval after Word shows detached U+0654.",
     )
     args = ap.parse_args()
+    justify_styles = {
+        value.casefold().replace(" ", "")
+        for value in (args.justify_style or ("Normal", "Body Text"))
+    }
     doc = Document(args.input)
     remove_title_borders(doc)
     normalize_title_and_heading_colors(doc)
@@ -390,8 +447,17 @@ def main():
             for cell in row.cells
             for p in cell.paragraphs
         )
+    if args.body_alignment == "justify":
+        ensure_do_not_expand_shift_return(doc)
     for p in doc.paragraphs:
-        process_paragraph(p, args.mode, args.ezafe_mode)
+        process_paragraph(
+            p,
+            args.mode,
+            args.ezafe_mode,
+            force_alignment=body_alignment_for(
+                p, args.mode, args.body_alignment, args.rtl_right_jc, justify_styles
+            ),
+        )
     for table in iter_tables(doc):
         if document_has_persian:
             set_table_rtl(table)
@@ -402,7 +468,7 @@ def main():
                 for p in cell.paragraphs:
                     table_alignment = (
                         "center" if row_index == 0
-                        else ("right" if FA.search(text_of(p)) else "left")
+                        else (args.rtl_right_jc if FA.search(text_of(p)) else "left")
                     )
                     process_paragraph(
                         p, args.mode, args.ezafe_mode,
@@ -415,7 +481,15 @@ def main():
                 continue
             seen.add(id(story._element))
             for p in story.paragraphs:
-                process_paragraph(p, args.mode, args.ezafe_mode)
+                story_alignment = (
+                    "center"
+                    if args.header_footer_alignment == "center"
+                    else (args.rtl_right_jc if FA.search(text_of(p)) else "left")
+                )
+                process_paragraph(
+                    p, args.mode, args.ezafe_mode,
+                    force_alignment=story_alignment,
+                )
             for table in iter_tables(story):
                 if document_has_persian:
                     set_table_rtl(table)
@@ -426,7 +500,7 @@ def main():
                         for p in cell.paragraphs:
                             table_alignment = (
                                 "center" if row_index == 0
-                                else ("right" if FA.search(text_of(p)) else "left")
+                                else (args.rtl_right_jc if FA.search(text_of(p)) else "left")
                             )
                             process_paragraph(
                                 p, args.mode, args.ezafe_mode,

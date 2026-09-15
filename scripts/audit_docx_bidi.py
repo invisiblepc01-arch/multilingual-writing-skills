@@ -48,20 +48,33 @@ def inside_table_cell(p):
 def paragraph_style(p):
     ppr = p.find("w:pPr", NS)
     style = None if ppr is None else ppr.find("w:pStyle", NS)
-    return attr(style, "val") or ""
+    return attr(style, "val") or "Normal"
 
 
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("docx", type=Path)
     ap.add_argument("--json", dest="json_path", type=Path)
+    ap.add_argument("--body-alignment", choices=("right", "justify"), default="right")
+    ap.add_argument("--justify-style", action="append", default=[])
+    ap.add_argument("--rtl-right-jc", choices=("right", "start"), default="start")
+    ap.add_argument("--header-footer-alignment", choices=("center", "right"), default="center")
     args = ap.parse_args()
+    justify_styles = {
+        value.casefold().replace(" ", "")
+        for value in (args.justify_style or ("Normal", "Body Text"))
+    }
     errors, warnings, stats = [], [], Counter()
     try:
         with ZipFile(args.docx) as zf:
             crc = zf.testzip()
             if crc:
                 errors.append({"part": crc, "issue": "CRC failure"})
+            if args.body_alignment == "justify":
+                settings = etree.fromstring(zf.read("word/settings.xml"))
+                protected = settings.find("w:compat/w:doNotExpandShiftReturn", NS)
+                if protected is None:
+                    errors.append({"part": "word/settings.xml", "issue": "Justified body is missing w:doNotExpandShiftReturn"})
             parts = [
                 n for n in zf.namelist()
                 if n == "word/document.xml"
@@ -99,8 +112,36 @@ def main():
                         errors.append({"part": part, "paragraph": i, "issue": "missing w:bidi", "text": text[:80]})
                     if FA.search(text) and attr(bidi, "val") not in {"1", "true", "on"}:
                         errors.append({"part": part, "paragraph": i, "issue": "Persian paragraph is not RTL", "text": text[:80]})
-                    if FA.search(text) and not is_table_header and attr(jc, "val") != "right":
-                        errors.append({"part": part, "paragraph": i, "issue": "Persian/mixed paragraph is not directly right aligned", "text": text[:80]})
+                    style = paragraph_style(p).casefold().replace(" ", "")
+                    if is_table_header:
+                        expected_jc = "center"
+                    elif is_table_body:
+                        expected_jc = args.rtl_right_jc if FA.search(text) else "left"
+                    elif is_header_footer:
+                        expected_jc = "center" if args.header_footer_alignment == "center" else (args.rtl_right_jc if FA.search(text) else "left")
+                    elif style in {"title", "heading1"}:
+                        expected_jc = "center"
+                    elif FA.search(text) and style.startswith("heading"):
+                        expected_jc = args.rtl_right_jc
+                    elif FA.search(text):
+                        expected_jc = "both" if args.body_alignment == "justify" and style in justify_styles else args.rtl_right_jc
+                    else:
+                        expected_jc = "left"
+                    if attr(jc, "val") != expected_jc:
+                        errors.append({"part": part, "paragraph": i, "issue": f"Paragraph alignment does not match role policy (expected {expected_jc})", "text": text[:80]})
+                    role = (
+                        "table-header" if is_table_header else
+                        "table-body" if is_table_body else
+                        "header-footer" if is_header_footer else
+                        "primary-title" if style in {"title", "heading1"} else
+                        "heading" if style.startswith("heading") else
+                        "body-justify" if expected_jc == "both" else
+                        "body-right" if FA.search(text) else
+                        "ltr-left"
+                    )
+                    stats[f"role_{role}"] += 1
+                    if expected_jc == "both":
+                        stats["soft_breaks_in_justified_body"] += len(p.xpath(".//w:br", namespaces=NS))
                     if GLUED_SCRIPTS.search(text):
                         errors.append({"part": part, "paragraph": i, "issue": "missing Persian/Latin boundary separator", "text": text[:80]})
                     for run_index, run in enumerate(p.xpath(".//w:r", namespaces=NS), 1):
@@ -109,20 +150,8 @@ def main():
                             errors.append({"part": part, "paragraph": i, "run": run_index, "issue": "run begins with a combining mark", "text": run_text[:80]})
                         if COMBINING_DOTTED_CIRCLE in run_text:
                             errors.append({"part": part, "paragraph": i, "run": run_index, "issue": "literal dotted-circle character remains", "text": run_text[:80]})
-                    if is_header_footer and FA.search(text) and attr(jc, "val") != "right":
-                        errors.append({"part": part, "paragraph": i, "issue": "Persian-containing header/footer is not right aligned", "text": text[:80]})
-                    if is_table_header and attr(jc, "val") != "center":
-                        errors.append({"part": part, "paragraph": i, "issue": "Table header is not directly center aligned", "text": text[:80]})
-                    if is_table_body and FA.search(text) and attr(jc, "val") != "right":
-                        errors.append({"part": part, "paragraph": i, "issue": "Persian table-body paragraph is not right aligned", "text": text[:80]})
-                    if is_table_body and not FA.search(text):
-                        if attr(jc, "val") != "left":
-                            errors.append({"part": part, "paragraph": i, "issue": "English/numeric table-body paragraph is not left aligned", "text": text[:80]})
-                        if attr(bidi, "val") not in {"0", "false", "off"}:
-                            errors.append({"part": part, "paragraph": i, "issue": "English/numeric table-body paragraph is not explicitly LTR", "text": text[:80]})
-                    style = paragraph_style(p).casefold()
-                    if FA.search(text) and style.startswith("heading") and attr(jc, "val") != "right":
-                        errors.append({"part": part, "paragraph": i, "issue": "Persian heading is not right aligned", "text": text[:80]})
+                    if is_table_body and not FA.search(text) and attr(bidi, "val") not in {"0", "false", "off"}:
+                        errors.append({"part": part, "paragraph": i, "issue": "English/numeric table-body paragraph is not explicitly LTR", "text": text[:80]})
                     if style == "title":
                         borders = None if ppr is None else ppr.find("w:pBdr", NS)
                         if borders is not None and len(borders):

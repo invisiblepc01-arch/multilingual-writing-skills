@@ -20,6 +20,7 @@ def main() -> None:
         temp = Path(temp_dir)
         raw = temp / "fixture.docx"
         hardened = temp / "fixture-hardened.docx"
+        justified = temp / "fixture-justified.docx"
         run_report = temp / "run-audit.json"
         run(str(scripts / "make_bidi_fixture.py"), str(raw))
         run(str(scripts / "harden_docx_bidi.py"), str(raw), str(hardened), "--mode", "auto")
@@ -28,7 +29,16 @@ def main() -> None:
         report = json.loads(run_report.read_text(encoding="utf-8"))
         if report["warnings"]:
             raise RuntimeError(f"run audit emitted warnings: {report['warnings']}")
-    print("PASS: fixture, hardening, paragraph audit, and run audit")
+        run(
+            str(scripts / "harden_docx_bidi.py"), str(raw), str(justified),
+            "--mode", "auto", "--body-alignment", "justify",
+        )
+        run(
+            str(scripts / "audit_docx_bidi.py"), str(justified),
+            "--body-alignment", "justify",
+        )
+        run(str(scripts / "audit_docx_run_props.py"), str(justified), "--report", str(run_report))
+    print("PASS: right/justify policies, hardening, paragraph audit, and run audit")
 
 
 if __name__ == "__main__":

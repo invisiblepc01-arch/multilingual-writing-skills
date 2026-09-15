@@ -44,6 +44,7 @@ This project makes those requirements explicit and testable.
 ├── scripts/
 │   ├── audit_docx_bidi.py
 │   ├── audit_docx_run_props.py
+│   ├── audit_word_effective_alignment.ps1
 │   ├── harden_docx_bidi.py
 │   ├── make_bidi_fixture.py
 │   └── smoke_test.py
@@ -114,6 +115,17 @@ python scripts/audit_docx_bidi.py fixture_hardened.docx --json fixture_audit.jso
 python scripts/audit_docx_run_props.py fixture_hardened.docx --report fixture_run_audit.json
 ```
 
+For user-requested standard Word Justify on ordinary Persian body styles:
+
+```bash
+python scripts/harden_docx_bidi.py fixture_raw.docx fixture_justified.docx --mode auto --body-alignment justify --rtl-right-jc start
+python scripts/audit_docx_bidi.py fixture_justified.docx --json fixture_justify_audit.json --body-alignment justify --rtl-right-jc start
+powershell -File scripts/audit_word_effective_alignment.ps1 -Docx fixture_justified.docx -Report fixture_word_alignment.json -BodyAlignment justify
+```
+
+This keeps RTL and alignment as separate requirements, leaves the final
+incomplete line unexpanded, and prevents `Shift+Enter` endings from stretching.
+
 A successful audit exits with code `0` and reports:
 
 ```json
@@ -134,7 +146,9 @@ python scripts/smoke_test.py
 Structural OOXML validation is necessary but not sufficient. A document must
 also be rendered and inspected in its target engine. Do not claim that a file
 is “Word 2024 verified” unless the final DOCX was actually opened or rendered
-by Word 2024 and every page was reviewed. Follow the post-Word hardening and
+by Word 2024 and the requested visual scope was reviewed. Representative-page
+sampling is allowed only when the user explicitly requests it; whole-document
+automated audits remain mandatory. Follow the post-Word hardening and
 read-only verification sequence in [word-roundtrip.md](references/word-roundtrip.md)
 so a later Word save cannot silently invalidate the evidence.
 

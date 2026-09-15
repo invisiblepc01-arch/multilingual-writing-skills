@@ -13,7 +13,9 @@ Use this order when Word fidelity is a release requirement:
    been generated and saved by Word, this release-hardening step locks the outer
    TOC field and every nested field in its result. That prevents verification
    from regenerating `_Toc...` bookmarks and reformatting current TOC pages.
-4. Run both paragraph- and run-level audits on the hardened file. Add
+4. Run both paragraph- and run-level audits on the hardened file, using the
+   same role policy (`--body-alignment`, `--justify-style`, and target
+   `--rtl-right-jc`) used by the hardener. Add
    `--require-toc` or `--require-page-fields` only when those features are part
    of the document contract.
 5. Reopen the hardened file read-only in Word and export once without updating
@@ -25,13 +27,18 @@ Use this order when Word fidelity is a release requirement:
    and require byte-identical page images; a differing page is a release failure,
    not a warning. If any comparison differs, save an updated working copy in
    Word, harden it, and repeat from step 3.
-7. Run `scripts/audit_word_table_order.ps1` against the same exact hardened
+7. Run `scripts/audit_word_effective_alignment.ps1` against the same exact
+   hardened output. It must verify ReadingOrder and Alignment together with
+   zero failures and an unchanged SHA-256.
+8. Run `scripts/audit_word_table_order.ps1` against the same exact hardened
    output in the target Word version. It must enumerate every table and report
    zero failures; table 1 is not a representative substitute for later tables.
-8. Inspect every page from the exact hardened deliverable. Check physical right
+9. Inspect every page, or the representative pages explicitly requested by the
+   user, from the exact hardened deliverable. Keep automated checks complete.
+   Check physical right
    alignment, Persian/Latin boundary spacing, table column identity/order, and
    attached hamza/ezafe glyphs; XML-only checks are insufficient.
-9. If another Word save is necessary, repeat hardening and all audits.
+10. If another Word save is necessary, repeat hardening and all audits.
 
 Prefer Word 2024 when installed, otherwise use the newest available Word.
 LibreOffice is allowed only after Word is confirmed unavailable or unable to

@@ -20,15 +20,32 @@ correct layout from extracted text alone.
 4. Apply paragraph direction and physical alignment explicitly. Treat any
    paragraph containing at least one Persian/Arabic character as a Persian or
    mixed paragraph, regardless of where the Latin fragments occur:
-   - Persian and mixed prose, headings, list items, table-body paragraphs,
-     captions, headers, and footers: direct `w:bidi=1` and direct `w:jc=right`.
-   - Do not accept inherited RTL, `w:jc=center`, `both`, `start`, or merely
-     "not left" as proof of compliance. Override conflicting style and direct
-     properties. A centered Persian role is allowed only when the user
-     explicitly requests that exact role to be centered.
+   - Direction always precedes alignment: every Persian/mixed paragraph is
+     directly `w:bidi=1`, then receives the alignment required by its role.
+     Never treat RTL and alignment as interchangeable checks.
+   - Ordinary Persian/mixed body prose outside tables is physically right by
+     default. When the user requests Microsoft Word's standard `Justify`, use
+     direct `w:jc=both` only for explicitly selected body styles (normally
+     `Normal`/`Body Text`). Do not spread that policy to TOC entries, headings,
+     captions, lists, code/URL blocks, tables, headers, or footers.
+   - Standard Justify must leave the final incomplete line right-anchored and
+     unexpanded. Add `w:compat/w:doNotExpandShiftReturn` so a line ending in a
+     manual `Shift+Enter` break is not stretched across the page.
+   - A right-aligned RTL role uses direct `w:jc=start` on the validated Word
+     2024 profile. If another target Word build maps it differently, prove the
+     replacement with a minimal matrix and the effective Word audit; do not
+     trust an OOXML token or a visual guess alone. On the validated profile,
+     `w:jc=right` rendered physically left and is therefore a release failure.
+   - Overall titles and chapter-opening `Title`/`Heading 1` paragraphs are
+     centered and use `B Titr` or `B Titr Bold`; subordinate Persian headings
+     remain RTL/right unless the user explicitly requests another role.
    - English prose: `w:bidi=0`, normally `w:jc=left`.
    - Centered objects/page numbers: explicit `w:jc=center`; choose bidi based
      on their content.
+   - A unified header or footer is centered. When it contains two independent
+     pieces, author separate structural pieces: the Persian/mixed piece at the
+     right is RTL/right and the page-number or LTR piece at the left is
+     LTR/left. Do not collapse a split layout into one centered paragraph.
    - Mandatory table-header exception: every nonempty paragraph in the first
      row of every table is directly `w:jc=center`, whether its text is Persian,
      Latin, numeric, or mixed. Persian/mixed headers still require direct
@@ -37,7 +54,8 @@ correct layout from extracted text alone.
      Persian right alignment only in the table header row.
    - Mandatory table-body rule: no nonempty paragraph below the first row may
      remain centered. If it contains any Persian/Arabic character, including a
-     mixed Persian/Latin phrase, set direct `w:bidi=1` and `w:jc=right`. If it
+     mixed Persian/Latin phrase, set direct `w:bidi=1` and the validated
+     physical-right value (`w:jc=start` on the Word 2024 profile). If it
      contains only English/Latin text, only digits, or their LTR combination,
      set direct `w:bidi=0` and `w:jc=left`.
 5. Apply run direction and mixed-script boundaries explicitly:
@@ -103,8 +121,13 @@ correct layout from extracted text alone.
 
 - Run `scripts/harden_docx_bidi.py INPUT OUTPUT --mode auto` to repair paragraph,
   run, header/footer, style, and list-direction properties.
+- For a justified Persian body on the validated Word 2024 profile, run
+  `harden_docx_bidi.py INPUT OUTPUT --mode auto --body-alignment justify
+  --rtl-right-jc start`. Repeat `--justify-style STYLE` for each inspected
+  ordinary-body style beyond `Normal`/`Body Text`; never select structural
+  styles by guesswork.
 - Run `scripts/audit_docx_bidi.py FILE --json REPORT.json` for a machine-readable
-  release gate.
+  release gate, passing the same alignment-policy arguments as the hardener.
 - Run `scripts/audit_docx_run_props.py FILE --report REPORT.json` after any Word
   save. Add `--require-toc` and `--require-page-fields` when applicable.
 - Run `scripts/verify_word_render.ps1 -Docx FILE -OutputDirectory DIR` on
@@ -118,6 +141,11 @@ correct layout from extracted text alone.
   and fails unless logical header cell 1 is physically rightmost, every later
   header cell proceeds monotonically leftward, and the final cell is leftmost
   in every table. A failure in any table blocks release.
+- Run `scripts/audit_word_effective_alignment.ps1 -Docx FILE -Report REPORT.json
+  -BodyAlignment justify` in the target Word version when standard Justify is
+  requested. It must check ReadingOrder and Alignment together on the exact
+  hash and report zero failures. Structural XML and effective Word audits are
+  both mandatory; neither replaces the other.
 - Run `scripts/make_bidi_fixture.py OUTPUT.docx` to generate an adversarial
   Persian/English test document.
 - Run `scripts/smoke_test.py` after changing any bundled script.
@@ -137,12 +165,14 @@ availability differs.
 
 - The DOCX ZIP passes CRC validation and opens without repair warnings.
 - Every nonempty paragraph has an intentional `w:jc` and `w:bidi`.
-- Every paragraph containing Persian is directly `w:bidi=1` and
-  `w:jc=right`, including headings, table body, and story parts. Every table
-  header paragraph is directly `w:jc=center` for every language while retaining
-  language-appropriate bidi; this mandatory header role is the explicit
-  exception.
-- No nonempty table-body paragraph is centered: Persian/mixed is RTL/right and
+- Every paragraph containing Persian is directly `w:bidi=1`, then matches its
+  declared role: selected body prose is `both` in Justify mode; subordinate
+  headings and Persian/mixed table body are physically right (`start` on the
+  validated Word 2024 profile); primary titles, unified headers/footers, and
+  table headers are centered. No inherited or conflicting direct value passes.
+- Justify mode includes `w:doNotExpandShiftReturn`; final incomplete lines and
+  manual-break endings are not expanded.
+- No nonempty table-body paragraph is centered or justified: Persian/mixed is RTL/right and
   English-only or numeric-only is LTR/left.
 - Every visible Persian or Latin run has direct direction, language, and all
   four font slots after the final Word save; Persian bold runs also have
@@ -175,9 +205,15 @@ availability differs.
 - The read-only Word render and every audit refer to the exact final DOCX. Word
   2024 is the first-choice evidence engine when installed; LibreOffice is only
   a documented fallback.
+- The effective Word audit confirms both direction and physical alignment in
+  one gate. A paragraph that is RTL but left-aligned, or right-aligned but LTR,
+  fails even if separate legacy audits pass.
 
 ## Honesty boundary
 
 Do not claim “flawless,” “Word-verified,” or “tested in Word 2024” unless the
-final DOCX was actually opened/rendered by that engine and all pages were
-inspected. Structural XML validation is necessary but cannot replace visual QA.
+final DOCX was actually opened/rendered by that engine. Inspect every page
+unless the user explicitly requests representative-page sampling; in that
+case keep whole-document automated audits complete, inspect the requested
+representative pages, and state the visual sampling scope. Structural XML
+validation is necessary but cannot replace visual QA.

@@ -78,6 +78,7 @@ build-bilingual-docx/
 └── scripts/
     ├── audit_docx_bidi.py
     ├── audit_docx_run_props.py
+    ├── audit_word_effective_alignment.ps1
     ├── harden_docx_bidi.py
     ├── make_bidi_fixture.py
     └── smoke_test.py
@@ -202,7 +203,7 @@ Codex تغییرات Skill را معمولاً خودکار تشخیص می‌د
 ```text
 $build-bilingual-docx
 از متن فارسی پیوست‌شده یک فایل DOCX استاندارد با تیترهای شماره‌دار، فهرست مطالب،
-هدر راست‌چین و کنترل کامل RTL بساز.
+سربرگ یکپارچهٔ وسط‌چین و کنترل کامل RTL بساز.
 ```
 
 در ChatGPT Desktop ممکن است بتوانید با `@` نیز Skill را از فهرست انتخاب کنید.
@@ -250,6 +251,14 @@ python ".\scripts\audit_docx_run_props.py" `
 python ".\scripts\smoke_test.py"
 ```
 
+حالت اختیاری Justify که فقط با درخواست کاربر برای متن بدنه فعال می‌شود:
+
+```powershell
+python ".\scripts\harden_docx_bidi.py" ".\fixture_raw.docx" ".\fixture_justified.docx" --mode auto --body-alignment justify --rtl-right-jc start
+python ".\scripts\audit_docx_bidi.py" ".\fixture_justified.docx" --json ".\fixture_justify_audit.json" --body-alignment justify --rtl-right-jc start
+powershell -File ".\scripts\audit_word_effective_alignment.ps1" -Docx ".\fixture_justified.docx" -Report ".\fixture_word_alignment.json" -BodyAlignment justify
+```
+
 نتیجه مطلوب:
 
 ```json
@@ -262,11 +271,11 @@ python ".\scripts\smoke_test.py"
 سپس `fixture_hardened.docx` را در Microsoft Word باز کنید و موارد زیر را
 بررسی کنید:
 
-- تیتر و شماره آن در سمت راست باشد؛
-- متن فارسی RTL و راست‌چین باشد؛
+- عنوان اصلی وسط‌چین و تیترهای فرعی از سمت راست باشند؛
+- متن فارسی RTL و مطابق سیاست انتخابی راست‌چین یا Justify باشد؛
 - عبارت‌های انگلیسی وارونه نشده باشند؛
 - شماره‌های فهرست در سمت راست قرار گرفته باشند؛
-- هدر فارسی از سمت راست نمایش داده شود؛
+- سربرگ/پابرگ یکپارچه وسط‌چین باشد و اجزای مستقلِ طرح شکسته نقش راست/چپ خود را حفظ کنند؛
 - جدول و فوتر به‌درستی نمایش داده شوند.
 
 ---

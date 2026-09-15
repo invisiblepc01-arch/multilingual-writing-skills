@@ -13,24 +13,36 @@
 
 ## 1. Paragraph properties
 
-For every paragraph containing Persian/Arabic script, including a paragraph
-that also contains Latin text:
+For a Persian/mixed paragraph whose declared role is physical right alignment:
 
 ```xml
 <w:pPr>
-  <w:jc w:val="right"/>
+  <w:jc w:val="start"/>
   <w:bidi w:val="1"/>
 </w:pPr>
 ```
 
-`w:bidi` controls paragraph reading order. `w:jc` controls physical alignment.
-Neither substitutes for the other. “Right justify” in user language usually
-means `right`, not Word's full-width `both`; confirm if ambiguous.
+`w:bidi` controls paragraph reading order. `w:jc` controls alignment. Neither
+substitutes for the other. On the validated Word 2024 profile, `start` resolves
+to physical right for an RTL paragraph, while `right` resolves to physical
+left. Treat this as a target-profile fact, not a universal lexical shortcut;
+verify the effective values through Word (`ReadingOrder=0`, `Alignment=2`).
 
-The release audit must require both direct properties. Do not treat inherited
-style direction, `center`, `both`, `start`, or "not left" as equivalent to
-right alignment. Apply the same rule inside tables and all story parts. Center
-a Persian paragraph only when the user explicitly requests that role.
+If the user explicitly requests Word's standard Justify for ordinary body
+prose, keep `w:bidi=1` and use `w:jc=both`. Word normally leaves the final
+incomplete line unexpanded. Also add this compatibility property so a line
+ending with `Shift+Enter` is not expanded:
+
+```xml
+<w:compat>
+  <w:doNotExpandShiftReturn/>
+</w:compat>
+```
+
+Classify by role before writing alignment. Never apply `both` to headings,
+TOC entries, captions, tables, headers, or footers merely because they are
+outside a table. The release audit must require direct bidi plus the exact role
+alignment and then confirm the effective result in the target Word build.
 
 For English use `w:bidi=0` and normally `w:jc=left`. For a centered page number,
 use `center` explicitly.
@@ -100,8 +112,9 @@ The body audit does not cover headers and footers. Inspect:
 
 ## 6. Mixed-language text
 
-Keep the paragraph RTL and physically right-aligned whenever it contains any
-Persian. Split Persian and English into separate runs and mark each direction.
+Keep every Persian/mixed paragraph RTL, then apply its declared role alignment;
+ordinary body prose may use standard Justify when explicitly requested. Split
+Persian and English into separate runs and mark each direction.
 Use RLM/LRM or Unicode
 isolates only when run boundaries do not resolve punctuation/number placement.
 Do not scatter invisible controls without an audit; they can pollute headings,
@@ -126,7 +139,8 @@ alignment for the whole table:
   numeric, and mixed headers. Persian/mixed headers remain `w:bidi=1`; pure
   Latin headers remain `w:bidi=0`. The mandatory `w:jc=center` is a role-based
   exception to the ordinary Persian right-alignment rule.
-- Any Persian/Arabic text: `w:bidi=1`, `w:jc=right`.
+- Any Persian/Arabic table-body text: `w:bidi=1`, physical right
+  (`w:jc=start` on the validated Word 2024 profile), never Justify.
 - Pure Latin/English, URL, code, numeric, or mathematical content:
   `w:bidi=0`, `w:jc=left`.
 
@@ -134,11 +148,12 @@ The two rules immediately above are mandatory for every nonempty table-body
 paragraph below the first row. Table-body centering is a release failure; the
 center exception belongs only to the first/header row.
 
-For a mixed-language paragraph, the presence of Persian makes the paragraph
-directly RTL/right-aligned; keep its Latin fragments in explicit LTR runs.
-Apply this to headers, footers, page-number labels, captions, headings, and
-table-body rows. In the first/header row, keep the same language-appropriate
-bidi direction but apply the mandatory horizontal `center` role.
+For a mixed-language paragraph, Persian presence always makes the paragraph
+directly RTL; alignment still comes from its structural role. A unified
+header/footer is centered. A split header/footer uses separate right RTL and
+left LTR pieces. Primary `Title`/`Heading 1` is centered; subordinate headings
+and table-body rows use physical right. The first/header row keeps
+language-appropriate bidi and mandatory horizontal `center`.
 
 In any deliverable designated Persian or Persian/English, add this property to
 every table so semantic cell 1 displays at the far right. Do not infer a silent
@@ -178,8 +193,11 @@ table rows create large empty areas; allow data rows to split when necessary.
 - Fonts absent on the target machine will substitute and change pagination.
 - A right-aligned long line naturally begins far from the right edge; judge its
   ending edge and paragraph mark, not only its first visible glyph.
-- A table can have right-aligned cells while its columns still display LTR;
-  `w:jc=right` does not replace `w:bidiVisual=1`.
+- A table can have physically right-aligned cells while its columns still
+  display LTR; paragraph alignment does not replace `w:bidiVisual=1`.
 - A document can pass XML bidi checks yet fail Word visually because a combining
   mark starts a run, styles override direct intent, or field updates repaginate
   the file. Treat the Word render as the decisive target-engine evidence.
+- Never infer physical alignment from `w:jc` alone. Run a target-Word matrix
+  and the combined effective direction/alignment audit; the validated Word
+  2024 profile maps RTL `start` to right and RTL `right` to left.
