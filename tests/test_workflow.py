@@ -149,24 +149,29 @@ def test_justify_body_policy_and_word2024_start_mapping(tmp_path):
     assert len(body.getroottree().xpath('.//w:p[contains(string(.), "شکست دستی")]//w:br', namespaces=NS)) == 1
 
 
-def test_explicit_precomposed_ezafe_mode(tmp_path):
+def test_legacy_precomposed_ezafe_is_normalized_to_explicit_sequence(tmp_path):
     raw = tmp_path / "raw.docx"
-    hardened = tmp_path / "precomposed.docx"
+    hardened = tmp_path / "normalized.docx"
     run(SCRIPTS / "make_bidi_fixture.py", raw)
+    with zipfile.ZipFile(raw) as archive:
+        document = etree.fromstring(archive.read("word/document.xml"))
+    for node in document.xpath(".//w:t", namespaces=NS):
+        if node.text:
+            node.text = node.text.replace("ه\u0654", "ۀ")
+    with zipfile.ZipFile(raw, "a") as archive:
+        archive.writestr("word/document.xml", etree.tostring(document, xml_declaration=True, encoding="UTF-8", standalone="yes"))
     run(
         SCRIPTS / "harden_docx_bidi.py",
         raw,
         hardened,
         "--mode",
         "auto",
-        "--ezafe-mode",
-        "precomposed",
     )
     with zipfile.ZipFile(hardened) as archive:
         document = etree.fromstring(archive.read("word/document.xml"))
     all_text = "".join(document.xpath(".//w:t/text()", namespaces=NS))
-    assert "\u0654" not in all_text
-    assert "ۀ" in all_text
+    assert "ه\u0654" in all_text
+    assert "ۀ" not in all_text
 
 
 def test_hardener_locks_current_toc_tree(tmp_path):
