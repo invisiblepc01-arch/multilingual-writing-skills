@@ -115,11 +115,15 @@ def normalize_word_ezafe(p, mode="preserve"):
         # points and keeps them in one run.
         if mode == "preserve":
             value = value.replace(HEH_WITH_YEH_ABOVE, HEH + COMBINING_HAMZA_ABOVE)
+        if mode == "precomposed":
+            value = value.replace(HEH + COMBINING_HAMZA_ABOVE, HEH_WITH_YEH_ABOVE)
         if value.startswith(COMBINING_HAMZA_ABOVE) and previous is not None:
             previous_value = previous.text or ""
             if previous_value.endswith(HEH):
                 previous.text = (
-                    previous_value + COMBINING_HAMZA_ABOVE
+                    previous_value[:-1] + HEH_WITH_YEH_ABOVE
+                    if mode == "precomposed"
+                    else previous_value + COMBINING_HAMZA_ABOVE
                 )
                 value = value[1:]
         node.text = value
@@ -427,10 +431,12 @@ def main():
         default="center",
         help="Unified header/footer paragraphs are centered by default; split layouts require role-specific authoring.",
     )
-    # The explicit U+0647 U+0654 sequence is mandatory for this skill.  Keep
-    # the internal parameter for backward-compatible callers, but do not
-    # expose a mode that can emit U+06C0.
-    ap.set_defaults(ezafe_mode="preserve")
+    ap.add_argument(
+        "--ezafe-mode",
+        choices=("preserve", "precomposed"),
+        default="preserve",
+        help="Use precomposed only with explicit approval after Word shows detached U+0654.",
+    )
     args = ap.parse_args()
     justify_styles = {
         value.casefold().replace(" ", "")
