@@ -5,215 +5,72 @@ description: Create, repair, and validate production-grade Microsoft Word DOCX f
 
 # Build bilingual DOCX
 
-Treat Word layout as a compiled artifact: author semantically, encode direction
-explicitly, render with the target engine, inspect, and iterate. Never infer
-correct layout from extracted text alone.
+Treat layout as a compiled artifact: author semantically, encode direction explicitly, render, inspect, iterate. Never infer layout from extracted text.
 
-## Required workflow
+## Workflow
 
-1. Identify the target language of every structural role: body, heading, list,
-   table cell, caption, header/footer, TOC, code, URL, and diagram.
-2. Preserve a supplied DOCX. Work on a copy and make local changes unless the
-   user requests a redesign.
-3. Use `python-docx` for authoring and direct OOXML for properties it cannot
-   express reliably.
-4. Apply paragraph direction and physical alignment explicitly. Treat any
-   paragraph containing at least one Persian/Arabic character as a Persian or
-   mixed paragraph, regardless of where the Latin fragments occur:
-   - Direction always precedes alignment: every Persian/mixed paragraph is
-     directly `w:bidi=1`, then receives the alignment required by its role.
-     Never treat RTL and alignment as interchangeable checks.
-   - Ordinary Persian/mixed body prose outside tables is physically right by
-     default. When the user requests Microsoft Word's standard `Justify`, use
-     direct `w:jc=both` only for explicitly selected body styles (normally
-     `Normal`/`Body Text`). Do not spread that policy to TOC entries, headings,
-     captions, lists, code/URL blocks, tables, headers, or footers.
-   - Standard Justify must leave the final incomplete line right-anchored and
-     unexpanded. Add `w:compat/w:doNotExpandShiftReturn` so a line ending in a
-     manual `Shift+Enter` break is not stretched across the page.
-   - A right-aligned RTL role uses direct `w:jc=start` on the validated Word
-     2024 profile. If another target Word build maps it differently, prove the
-     replacement with a minimal matrix and the effective Word audit; do not
-     trust an OOXML token or a visual guess alone. On the validated profile,
-     `w:jc=right` rendered physically left and is therefore a release failure.
-   - Overall titles and chapter-opening `Title`/`Heading 1` paragraphs are
-     centered and use `B Titr` or `B Titr Bold`; subordinate Persian headings
-     remain RTL/right unless the user explicitly requests another role.
+1. Map the target language of every role: body, heading, list, table cell, caption, header/footer, TOC, code, URL, diagram.
+2. Preserve a supplied DOCX: work on a copy, make local changes unless a redesign is requested.
+3. Author with `python-docx`; use direct OOXML where it cannot express the property.
+4. Set paragraph direction, then physical alignment, directly. Any paragraph containing at least one Persian/Arabic character is Persian/mixed: `w:bidi=1` first, then its role alignment. Direction and alignment are separate checks.
+   - Body prose: physically right by role; Microsoft Word Justify only for explicitly selected body styles (normally `Normal`/`Body Text`) via direct `w:jc=both`, plus `w:compat/w:doNotExpandShiftReturn` so the final incomplete line and manual breaks stay right-anchored.
+   - Right-aligned RTL role: direct `w:jc=start` on the validated Word 2024 profile. On that profile `w:jc=right` rendered physically left, a release failure; any other target needs a minimal matrix plus the effective Word audit.
+   - Overall titles and chapter-opening `Title`/`Heading 1`: centered, `B Titr`/`B Titr Bold`. Subordinate Persian headings: RTL/right.
    - English prose: `w:bidi=0`, normally `w:jc=left`.
-   - Centered objects/page numbers: explicit `w:jc=center`; choose bidi based
-     on their content.
-   - A unified header or footer is centered. When it contains two independent
-     pieces, author separate structural pieces: the Persian/mixed piece at the
-     right is RTL/right and the page-number or LTR piece at the left is
-     LTR/left. Do not collapse a split layout into one centered paragraph.
-   - Mandatory table-header exception: every nonempty paragraph in the first
-     row of every table is directly `w:jc=center`, whether its text is Persian,
-     Latin, numeric, or mixed. Persian/mixed headers still require direct
-     `w:bidi=1`; pure Latin headers require direct `w:bidi=0`. Set header-cell
-     vertical alignment to center too. This role exception overrides ordinary
-     Persian right alignment only in the table header row.
-   - Mandatory table-body rule: no nonempty paragraph below the first row may
-     remain centered. If it contains any Persian/Arabic character, including a
-     mixed Persian/Latin phrase, set direct `w:bidi=1` and the validated
-     physical-right value (`w:jc=start` on the Word 2024 profile). If it
-     contains only English/Latin text, only digits, or their LTR combination,
-     set direct `w:bidi=0` and `w:jc=left`.
-5. Apply run direction and mixed-script boundaries explicitly:
-   - Persian run: `w:rtl=1`, `w:lang w:val=fa-IR w:bidi=fa-IR`.
-   - English run: `w:rtl=0`, `w:lang w:val=en-US`.
-   - Set all four `w:rFonts` slots: `ascii`, `hAnsi`, `eastAsia`, and `cs`.
-   - Keep every Latin token in its own LTR run inside an RTL paragraph. Preserve
-     a real boundary space or punctuation mark so Word never displays joined
-     forms such as `SAPنام`, `Systemسامانه`, or `FioriوHANA`.
-   - Never start a run with a combining mark. Keep Persian base letters and
-     combining marks in the same run, with identical font/language/direction.
-     For Persian ezafe after heh, preserve `U+0647 U+0654` (`هٔ`) as one
-     grapheme in one run. Do not silently replace it with `U+06C0` (`ۀ`), which
-     is a different Unicode letter; any orthographic substitution requires the
-     user's explicit approval. Re-render every occurrence in Word and reject a
-     dotted circle or detached hamza; textual equality is not visual proof.
-6. Apply the same rules at style level and direct paragraph level. Word may
-   otherwise display correctly in one renderer but inherit LTR in Word.
-7. Process every Word story: document body, tables, headers, footers,
-   footnotes/endnotes, comments, text boxes, drawing text, and content controls.
-8. For every Persian or mixed table, keep semantic column 1 as the first cell
-   in each row and set `w:tblPr/w:bidiVisual=1`, so Word displays column 1 at
-   the far right, column 2 immediately to its left, and the last column at the
-   far left. Apply this rule independently to every table in the document; a
-   correct first table never licenses skipping later tables. Do not reverse
-   only the header labels or rely on authoring-tool column order. Verify every
-   table in Word by physical column position, not just by XML or one sample.
-   Every Persian/mixed table-body paragraph remains RTL/right; pure Latin or
-   numeric table-body paragraphs are LTR/left. The first/header row follows the
-   mandatory centered-header exception above. Use light gray `#D9D9D9` outer
-   and inner table borders unless the user supplies a different table design.
-9. Model lists with real numbering when possible. For RTL lists use a right
-   indent plus hanging indent; remove inherited left indents. Do not use
-   space-based alignment.
-10. Keep BPMN/DFD/process diagrams LTR when the intended process flow is LTR,
-   even when surrounding prose is RTL. Do not mirror an embedded image.
-11. Build TOCs deliberately. Read `references/toc-and-numbering.md` before
-    creating or repairing a Persian TOC.
-12. Remove paragraph borders and decorative rules from the Word `Title` style
-    and from title paragraphs unless the user explicitly requests them.
+   - Centered objects/page numbers: explicit `w:jc=center`, bidi chosen by content.
+   - Headers/footers: unified content is centered; two independent pieces are separate paragraphs (Persian/mixed piece RTL/right, page-number or LTR piece LTR/left).
+   - Table header row: every nonempty paragraph direct `w:jc=center`; Persian/mixed also direct `w:bidi=1`, Latin-only direct `w:bidi=0`; center cell vertical alignment.
+   - Table body: nothing centered. Persian/mixed (including one Latin term): direct `w:bidi=1` and `w:jc=start`; English-only or numeric-only: `w:bidi=0` and `w:jc=left`.
+5. Runs:
+   - Persian: `w:rtl=1`, `w:lang w:val=fa-IR w:bidi=fa-IR`. English: `w:rtl=0`, `w:lang w:val=en-US`. Set all four `w:rFonts` slots (`ascii`, `hAnsi`, `eastAsia`, `cs`). Persian bold runs also need `w:bCs`.
+   - Keep each Latin token in its own LTR run inside an RTL paragraph, with a real boundary space or punctuation so Word never shows joined forms such as `SAPنام`.
+   - Never start a run with a combining mark; keep Persian base letters and marks in one run with identical font/language/direction. Preserve `هٔ` as U+0647 U+0654 in one run; never silently substitute U+06C0 (requires explicit user approval). Re-render every occurrence and reject a dotted circle or detached hamza.
+6. Apply the rules at style level and at direct paragraph level.
+7. Cover every story: body, tables, headers, footers, footnotes/endnotes, comments, text boxes, drawing text, content controls.
+8. Tables: semantic column 1 is the first cell of every row and `w:tblPr/w:bidiVisual=1` per table, so Word shows column 1 far right, the last column far left. Apply to every table independently; verify physical column position in Word for all tables. Use light gray `#D9D9D9` outer and inner borders unless the user supplies a design.
+9. Lists: real numbering where possible; RTL right indent plus hanging indent, remove inherited left indents; never space-based alignment.
+10. Keep BPMN/DFD/process diagrams LTR when the intended flow is LTR; never mirror an embedded image.
+11. Read `references/toc-and-numbering.md` before creating or repairing a Persian TOC.
+12. Remove paragraph borders and decorative rules from the `Title` style and title paragraphs unless explicitly requested.
 13. Run `scripts/audit_docx_bidi.py` and fix every error.
-14. Treat a desktop Word save as a mutating build step. Read
-    `references/word-roundtrip.md`, harden Word's saved copy, and run the
-    paragraph- and run-level audits again.
-15. Use Microsoft Word as the primary renderer whenever it is installed. Prefer
-    Word 2024, otherwise use the newest available Word version. Use LibreOffice
-    only after verifying that no usable Word installation exists or Word cannot
-    render the file, and disclose that fallback. Never let a successful
-    LibreOffice render overrule a Word defect.
-16. Stabilize dynamic fields before release. Update the TOC, PAGE, NUMPAGES,
-    cross-references, and pagination in Word, save a working copy, harden it,
-    then lock the final current TOC field and every nested TOC field in the
-    release copy so verification cannot regenerate its internal bookmarks,
-    then compare a read-only Word render before and after an in-memory field
-    update. Page count and visible field results must match. If they differ,
-    repeat the Word-save/harden/audit cycle; `updateFields=1` alone is not proof.
-17. Open the exact hardened deliverable read-only in the named Word version
-    when available. Recheck headers, first/last lines, wrapped lists,
-    mixed-language headings, TOC leaders, tables, and page breaks. Do not save
-    this verification copy; another save requires another hardening/audit pass.
+14. A desktop Word save is a mutating build step: read `references/word-roundtrip.md`, harden Word's saved copy, re-run paragraph and run audits.
+15. Render with Microsoft Word (2024 first, else newest); LibreOffice only when no usable Word exists or Word cannot render, and disclose the fallback. A LibreOffice pass never overrules a Word defect.
+16. Stabilize fields: update TOC, PAGE, NUMPAGES, cross-references and pagination in Word, save a working copy, harden it, lock the final current TOC field tree and every nested TOC field in the release copy, then compare a read-only Word render before and after an in-memory field update. Page count and visible results must match; `updateFields=1` alone is not proof.
+17. Open the exact hardened deliverable read-only in the named Word version; recheck headers, first/last lines, wrapped lists, mixed headings, TOC leaders, tables, page breaks. Do not save this verification copy.
 
 ## Deterministic tools
 
-- Run `scripts/harden_docx_bidi.py INPUT OUTPUT --mode auto` to repair paragraph,
-  run, header/footer, style, and list-direction properties.
-- For a justified Persian body on the validated Word 2024 profile, run
-  `harden_docx_bidi.py INPUT OUTPUT --mode auto --body-alignment justify
-  --rtl-right-jc start`. Repeat `--justify-style STYLE` for each inspected
-  ordinary-body style beyond `Normal`/`Body Text`; never select structural
-  styles by guesswork.
-- Run `scripts/audit_docx_bidi.py FILE --json REPORT.json` for a machine-readable
-  release gate, passing the same alignment-policy arguments as the hardener.
-- Run `scripts/audit_docx_run_props.py FILE --report REPORT.json` after any Word
-  save. Add `--require-toc` and `--require-page-fields` when applicable.
-- Run `scripts/verify_word_render.ps1 -Docx FILE -OutputDirectory DIR` on
-  Windows to prove that the exact hardened DOCX is stable before and after an
-  in-memory Word field update. It must rasterize both PDFs with `pdftoppm` and
-  require page-image hashes, page counts, and field snapshots to match. Pass
-  `-PdfToPpmPath` when the converter is not on `PATH`. A nonzero exit or
-  `stable=false` blocks release.
-- Run `scripts/audit_word_table_order.ps1 -Docx FILE -Report REPORT.json` in
-  the target Microsoft Word version. It opens the exact deliverable read-only
-  and fails unless logical header cell 1 is physically rightmost, every later
-  header cell proceeds monotonically leftward, and the final cell is leftmost
-  in every table. A failure in any table blocks release.
-- Run `scripts/audit_word_effective_alignment.ps1 -Docx FILE -Report REPORT.json
-  -BodyAlignment justify` in the target Word version when standard Justify is
-  requested. It must check ReadingOrder and Alignment together on the exact
-  hash and report zero failures. Structural XML and effective Word audits are
-  both mandatory; neither replaces the other.
-- Run `scripts/make_bidi_fixture.py OUTPUT.docx` to generate an adversarial
-  Persian/English test document.
-- Run `scripts/smoke_test.py` after changing any bundled script.
-- After changing the Word table-order auditor, run
-  `tests/test_word_table_order.ps1 -PythonPath PYTHON -WorkingDirectory DIR`
-  on a Windows host with Word. The hardened RTL fixture must pass and the raw
-  LTR negative-control fixture must fail.
+- Harden: `scripts/harden_docx_bidi.py INPUT OUTPUT --mode auto`; for justified body add `--body-alignment justify --rtl-right-jc start`, repeating `--justify-style STYLE` for each inspected ordinary-body style beyond `Normal`/`Body Text`.
+- Paragraph audit: `scripts/audit_docx_bidi.py FILE --json REPORT.json` with the same alignment arguments.
+- Run audit after any Word save: `scripts/audit_docx_run_props.py FILE --report REPORT.json` (`--require-toc`, `--require-page-fields` when applicable).
+- Render stability: `scripts/verify_word_render.ps1 -Docx FILE -OutputDirectory DIR`; it must rasterize both PDFs with `pdftoppm` and require matching page-image hashes, page counts and field snapshots. A nonzero exit or `stable=false` blocks release.
+- Table order: `scripts/audit_word_table_order.ps1 -Docx FILE -Report REPORT.json` in the target Word version; it fails unless logical header cell 1 is physically rightmost, later cells proceed monotonically leftward and the final cell is leftmost in every table. Any failing table blocks release.
+- Effective alignment: `scripts/audit_word_effective_alignment.ps1 -Docx FILE -Report REPORT.json -BodyAlignment justify` for standard Justify; it checks ReadingOrder and Alignment on the exact hash and must report zero failures.
+- Fixture: `scripts/make_bidi_fixture.py OUTPUT.docx`; after changing a bundled script run `scripts/smoke_test.py`, and after changing the table auditor run `tests/test_word_table_order.ps1` with Word.
+- Read `references/ooxml-bidi.md` before XML work or Word-only debugging, `references/qa-matrix.md` before release, `references/word-roundtrip.md` before desktop Word steps, and `references/portability.md` when the agent is not Codex/OpenAI.
 
-Read `references/ooxml-bidi.md` before modifying XML or debugging Word-only
-failures. Read `references/qa-matrix.md` before release. Read
-`references/word-roundtrip.md` before using desktop Word to update or verify a
-deliverable. Read
-`references/portability.md` when the agent is not Codex/OpenAI or when tool
-availability differs.
+## Release gates
 
-## Non-negotiable release gates
-
-- The DOCX ZIP passes CRC validation and opens without repair warnings.
-- Every nonempty paragraph has an intentional `w:jc` and `w:bidi`.
-- Every paragraph containing Persian is directly `w:bidi=1`, then matches its
-  declared role: selected body prose is `both` in Justify mode; subordinate
-  headings and Persian/mixed table body are physically right (`start` on the
-  validated Word 2024 profile); primary titles, unified headers/footers, and
-  table headers are centered. No inherited or conflicting direct value passes.
-- Justify mode includes `w:doNotExpandShiftReturn`; final incomplete lines and
-  manual-break endings are not expanded.
-- No nonempty table-body paragraph is centered or justified: Persian/mixed is RTL/right and
-  English-only or numeric-only is LTR/left.
-- Every visible Persian or Latin run has direct direction, language, and all
-  four font slots after the final Word save; Persian bold runs also have
-  `w:bCs`.
-- Persian headings begin visually at the right edge; their number is the
-  rightmost heading token, followed by one space or ` - ` and the title.
+- DOCX ZIP passes CRC validation and opens without repair warnings.
+- Every nonempty paragraph has an intentional `w:jc` and `w:bidi`; Persian paragraphs are directly `w:bidi=1` then match their role: selected body prose `both` in Justify mode, subordinate headings and Persian/mixed table body physically right (`start` on Word 2024), primary titles, unified headers/footers and table headers centered. Inherited or conflicting direct values fail.
+- Justify mode includes `w:doNotExpandShiftReturn`; final incomplete lines and manual-break endings are not expanded.
+- No nonempty table-body paragraph is centered or justified.
+- Every visible Persian or Latin run has direct direction, language and all four font slots after the final Word save; Persian bold runs have `w:bCs`.
+- Persian headings begin at the right edge; the number is the rightmost token, then one space or ` - ` and the title.
 - No Persian list inherits a left indent.
-- Headers are separate story parts and pass the same bidi audit as the body.
-- Persian TOC entries read from the right: heading number, separator, title,
-  dot leader, then page number at the far left.
-- English/code/URL runs remain LTR and are not character-reversed.
-- No run begins with a combining mark; no detached/dotted-circle hamza remains;
-  Persian/Latin boundaries retain visible spacing in Word.
-- In any document designated Persian or Persian/English, every table has
-  `w:bidiVisual=1`; Word shows semantic column 1 at the far right and the final
-  column at the far left on every page. The Word position audit passes for the
-  complete table count, with zero failed tables; checking only the first table,
-  a representative table, or the presence of `w:bidiVisual` is insufficient.
-  A separate LTR-only document is outside
-  this table policy; do not silently exempt individual tables inside a Persian
-  deliverable.
+- Headers are separate story parts and pass the same audit.
+- Persian TOC entries read from the right: number, separator, title, dot leader, page number at far left.
+- English/code/URL runs stay LTR and are not character-reversed.
+- No run starts with a combining mark; no detached or dotted-circle hamza; Persian/Latin boundaries keep visible spacing.
+- In any Persian or Persian/English document every table has `w:bidiVisual=1`, Word shows column 1 far right and the final column far left on every page, and the Word position audit passes for the complete table count with zero failures; checking the first table or the attribute alone is insufficient.
 - Title paragraphs have no unintended border or decorative rule.
-- A no-update read-only Word render and an update-in-memory Word render agree on
-  page count, TOC entries, PAGE, and NUMPAGES results.
-- The final TOC field tree is locked only after Word generates and saves its
-  current results; PAGE/NUMPAGES and other unlocked fields remain verifiable.
+- A no-update read-only Word render and an update-in-memory Word render agree on page count, TOC entries, PAGE and NUMPAGES results.
+- The final TOC field tree is locked only after Word generated and saved its current results; PAGE/NUMPAGES and other unlocked fields remain verifiable.
 - Required LTR diagrams remain LTR.
-- No clipping, overlap, missing glyph, broken table, orphaned heading, or
-  unexpected blank page remains in the inspected render.
-- The read-only Word render and every audit refer to the exact final DOCX. Word
-  2024 is the first-choice evidence engine when installed; LibreOffice is only
-  a documented fallback.
-- The effective Word audit confirms both direction and physical alignment in
-  one gate. A paragraph that is RTL but left-aligned, or right-aligned but LTR,
-  fails even if separate legacy audits pass.
+- No clipping, overlap, missing glyph, broken table, orphaned heading or unexpected blank page remains in the inspected render.
+- The read-only render and every audit refer to the exact final DOCX; Word 2024 is the first-choice engine, LibreOffice only a documented fallback.
+- The effective Word audit confirms direction and physical alignment together; RTL-but-left or right-but-LTR fails.
 
 ## Honesty boundary
 
-Do not claim “flawless,” “Word-verified,” or “tested in Word 2024” unless the
-final DOCX was actually opened/rendered by that engine. Inspect every page
-unless the user explicitly requests representative-page sampling; in that
-case keep whole-document automated audits complete, inspect the requested
-representative pages, and state the visual sampling scope. Structural XML
-validation is necessary but cannot replace visual QA.
+Never claim flawless, Word-verified or tested in Word 2024 unless the final DOCX was actually opened and rendered by that engine. Inspect every page unless the user requests representative sampling, then state the sampling scope; whole-document automated audits stay complete. Structural XML validation is necessary but never replaces visual QA.

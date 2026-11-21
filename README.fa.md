@@ -1,121 +1,89 @@
-# ساخت فایل‌های DOCX فارسی و انگلیسی
+# مهارت‌های نگارش دوزبانه برای عامل‌های هوش مصنوعی
 
-[English README](README.md) · [راهنمای نصب فارسی](INSTALLATION.fa.md) ·
-[English installation guide](INSTALLATION.md)
+[English](README.md) · [راهنمای نصب](INSTALLATION.fa.md)
 
-`build-bilingual-docx` یک Skill متن‌باز برای تولید، اصلاح و کنترل فایل‌های
-Microsoft Word شامل متن فارسی راست‌به‌چپ، انگلیسی چپ‌به‌راست و محتوای ترکیبی
-است.
+دو مهارت آمادهٔ تولید برای اینکه محتوای فارسی و انگلیسی، هم داخل سند Word و هم داخل محیط چت هوش مصنوعی، درست و قابل اعتماد بماند.
 
-## قابلیت‌ها
+| مهارت | کاربرد | چیزی که اضافه می‌کند |
+|---|---|---|
+| مهارت ساخت سند Word | فایل‌های مایکروسافت Word | جهت پاراگراف و متن، فونت فارسی، فهرست و شماره‌گذاری راست‌به‌چپ، جدول دوطرفه، سرصفحه و پاصفحه |
+| مهارت نگارش در چت | پاسخ‌های نمایشی در چت | لنگر فارسی، جداسازی واژه‌های لاتین، زنجیرهٔ مراحل، جدول راست‌به‌چپ، آزمون توان جهت‌دهی محیط |
 
-- تثبیت جهت RTL پاراگراف‌های فارسی؛
-- حفظ جهت LTR عبارت‌های انگلیسی، کدها، URLها و مسیرها؛
-- اصلاح تیترهای شماره‌دار فارسی؛
-- اصلاح فهرست‌های شماره‌ای و گلوله‌ای RTL؛
-- قواعد تخصصی فهرست مطالب فارسی؛
-- کنترل هدر، فوتر، جدول و Story Partهای مستقل Word؛
-- ممیزی مستقیم OOXML؛
-- ممیزی سخت‌گیرانه ویژگی‌های Run، فونت، زبان و جهت؛
-- تولید سند آزمایشی دوزبانه؛
-- کنترل چرخه بازکردن، ذخیره و بازبینی فقط‌خواندنی در Word؛
-- کنترل سازگاری با Word 2016 تا Word 2024.
+هر دو مهارت قالب باز Agent Skills را رعایت می‌کنند و با DeepSeek Harness، Codex و هر عامل دیگری که فایل می‌خواند و پایتون اجرا می‌کند سازگارند.
 
-## نصب سریع
+## چرا این پروژه وجود دارد
 
-مخزن را Clone یا به‌صورت ZIP دریافت و استخراج کنید. پوشه نهایی را در مسیر شخصی
-Skills قرار دهید:
+تنظیم پاراگراف روی «تراز راست» برای سند فارسی کافی نیست. خروجی درست به جهت صریح پاراگراف، جهت متن، شیارهای فونت فارسی، فونت ضخیم فارسی و تورفتگی فهرست راست‌به‌چپ نیاز دارد. Word می‌تواند این تنظیمات را هنگام ذخیره بی‌صدا تغییر دهد، پس تنها معیار قابل اعتماد، رندر و سنجش در همان موتور مقصد است.
+
+در محیط چت، خطا از جنسی دیگر است: بسیاری از محیط‌ها اصلاً جهت پایه تعریف نمی‌کنند، پس پاراگراف فارسی چپ‌چین می‌شود و جملهٔ ترکیبی در ترتیب نادرست می‌شکند. نشانه‌های نامرئی دوجهته نمی‌توانند تراز پاراگراف را درست کنند و این کار به یک قاعدهٔ نمایشی در خود محیط نیاز دارد. این مهارت آزمون تشخیص و راه‌حل دقیق را همراه دارد.
+
+## نصب در سه گام
+
+گام نخست: هر پوشهٔ مهارت را در پوشهٔ مهارت‌های عامل خود بگذارید.
 
 ```text
-Windows:
-%USERPROFILE%\.codex\skills\build-bilingual-docx
-
-macOS/Linux:
-$HOME/.codex/skills/build-bilingual-docx
+Windows:     %USERPROFILE%\.agents\skills\build-bilingual-docx
+             %USERPROFILE%\.agents\skills\multilingual-chat-writing
+macOS/Linux: $HOME/.agents/skills/build-bilingual-docx
+             $HOME/.agents/skills/multilingual-chat-writing
 ```
 
-فایل زیر باید مستقیماً وجود داشته باشد:
+گام دوم: پوشهٔ نهایی باید مستقیماً فایل SKILL.md داشته باشد.
+
+گام سوم: اگر مهارت دیده نشد، عامل را دوباره اجرا کنید.
+
+کاربران Codex می‌توانند از مسیر پوشهٔ skills داخل .codex استفاده کنند. همهٔ مسیرهای پشتیبانی‌شده در INSTALLATION.fa.md آمده است.
+
+## شروع سریع
+
+برای ساخت سند، نام مهارت را صریح بگویید یا فقط خروجی را بخواهید:
 
 ```text
-build-bilingual-docx/SKILL.md
+Use $build-bilingual-docx to create a production-ready Persian DOCX with
+numbered headings, an RTL table of contents, and Word-compatible headers.
 ```
 
-اگر Skill نمایش داده نشد، Codex را کاملاً ببندید و دوباره اجرا کنید. راهنمای
-کامل در [INSTALLATION.fa.md](INSTALLATION.fa.md) قرار دارد.
+برای پاسخ چت نیازی به فراخوانی صریح نیست؛ مهارت روی همهٔ پیام‌های فارسی اعمال می‌شود. اگر محیط، متن فارسی را چپ‌چین نشان داد، مهارت روش آزمون محیط و اصلاح قاعدهٔ جهت را می‌دهد.
 
-## استفاده
+## ابزارهای قطعی
 
-فراخوانی صریح:
+مهارت Word فقط متن دستور نیست و سنجه‌های اجراشدنی دارد:
 
-```text
-$build-bilingual-docx
-از این متن یک فایل Word فارسی استاندارد با تیترهای شماره‌دار، فهرست مطالب RTL
-و سربرگ یکپارچهٔ وسط‌چین بساز.
+```bash
+python scripts/make_bidi_fixture.py fixture_raw.docx
+python scripts/harden_docx_bidi.py fixture_raw.docx fixture_hardened.docx --mode auto
+python scripts/audit_docx_bidi.py fixture_hardened.docx --json audit.json
+python scripts/audit_docx_run_props.py fixture_hardened.docx --report run_audit.json
+python scripts/smoke_test.py
 ```
 
-فراخوانی ضمنی نیز به‌صورت پیش‌فرض فعال است؛ بنابراین درخواست عادی تولید یا
-اصلاح DOCX فارسی باید این Skill را فعال کند.
-
-## ابزارهای همراه
-
-نصب وابستگی‌ها:
+اگر Microsoft Word نصب باشد، دو سنجهٔ COM چیزی را ثابت می‌کند که XML نمی‌تواند:
 
 ```powershell
-python -m pip install -r requirements.txt
+powershell -File scripts/audit_word_table_order.ps1 -Docx file.docx -Report order.json
+powershell -File scripts/audit_word_effective_alignment.ps1 -Docx file.docx -Report align.json -BodyAlignment justify
 ```
 
-ساخت سند آزمایشی:
+سنجهٔ جدول رد می‌شود مگر آنکه ستون منطقی نخست در همهٔ جدول‌ها فیزیکی راست‌ترین باشد و ستون آخر چپ‌ترین. سنجهٔ ترازبندی هم ترتیب خواندن و ترازبندی را با هم و روی همان هش فایل بررسی می‌کند.
 
-```powershell
-python scripts\make_bidi_fixture.py fixture_raw.docx
-```
+## کیفیت سنجیده‌شده
 
-اصلاح جهت‌ها:
+Word نسخهٔ ۱۶ در سنجه‌های ترتیب جدول و ترازبندی واقعی، بدون خطا قبول شد. سنجه‌های ساختاری، جهت پاراگراف و متن، فونت‌ها، فیلدها و جدول‌ها را بررسی می‌کنند. آزمون دودی جداگانه، ساخت نمونه، هاردنسازی و دو حالت تراز را پوشش می‌دهد. آزمایشگاه دوجهتهٔ محیط چت هم با مرورگر بی‌سر و اندازه‌گیری مرز خطوط انجام شد.
 
-```powershell
-python scripts\harden_docx_bidi.py fixture_raw.docx fixture_hardened.docx --mode auto
-```
+اعتبارسنجی ساختاری لازم است ولی کافی نیست؛ هر ادعای انتشار، نام موتور و دامنهٔ رندر واقعی را ذکر می‌کند.
 
-ممیزی:
+## سازگاری
 
-```powershell
-python scripts\audit_docx_bidi.py fixture_hardened.docx --json fixture_audit.json
-python scripts\audit_docx_run_props.py fixture_hardened.docx --report fixture_run_audit.json
-```
+Word نسخه‌های ۲۰۱۶ تا ۲۰۲۴ هدف اصلی و سنجیده‌شده است. LibreOffice فقط به‌عنوان جایگزین و با اعلام صریح استفاده می‌شود. پایتون ۳٫۱۰ به بالا با python-docx و lxml برای اسکریپت‌ها لازم است. قالب مهارت با DeepSeek Harness، Codex و سطوح ChatGPT که مهارت مستقل بارگذاری می‌کنند سازگار است. سنجه‌های COM روی PowerShell ویندوز اجرا می‌شوند.
 
-برای تراز استاندارد Justify در متن بدنهٔ معمولی فارسی:
+## ساختار مخزن
 
-```powershell
-python scripts\harden_docx_bidi.py fixture_raw.docx fixture_justified.docx --mode auto --body-alignment justify --rtl-right-jc start
-python scripts\audit_docx_bidi.py fixture_justified.docx --json fixture_justify_audit.json --body-alignment justify --rtl-right-jc start
-powershell -File scripts\audit_word_effective_alignment.ps1 -Docx fixture_justified.docx -Report fixture_word_alignment.json -BodyAlignment justify
-```
-
-این حالت ابتدا RTL و سپس Justify را اعمال می‌کند، سطر پایانی ناقص را نمی‌کشد و
-از کشیده‌شدن سطرهای پایان‌یافته با `Shift+Enter` جلوگیری می‌کند. تیترها، فهرست،
-جدول‌ها، سربرگ و پابرگ قواعد مستقل خود را حفظ می‌کنند.
-
-نتیجه مطلوب شامل `"passed": true` و آرایه خالی `errors` است.
-
-آزمون دود کامل و ایزوله:
-
-```powershell
-python scripts\smoke_test.py
-```
-
-## محدودیت مهم
-
-ممیزی XML جایگزین کنترل تصویری نیست. فقط زمانی می‌توان خروجی را
-«کنترل‌شده در Word 2024» نامید که نسخه نهایی واقعاً با Word 2024 باز یا رندر
-شده و دامنهٔ بصری درخواستی بررسی شده باشد. نمونه‌گیری چند صفحه فقط با درخواست
-صریح کاربر مجاز است و ممیزی خودکار کل سند همچنان الزامی است. پس از آخرین ذخیره در Word باید سخت‌سازی و
-هر دو ممیزی دوباره اجرا شوند و کنترل نهایی Word به‌صورت فقط‌خواندنی باشد.
+پوشهٔ ریشه شامل SKILL.md مهارت Word است. پوشهٔ multilingual-chat-writing مهارت چت و ارجاع‌های آن را دارد. پوشهٔ references مرجع OOXML، فهرست، رفت‌وبرگشت Word و ماتریس کنترل کیفیت است. پوشهٔ scripts ابزار هاردنسازی، سنجش، ساخت نمونه و آزمون دودی را دارد. راهنمای نصب و مجوز هم در ریشه است.
 
 ## مشارکت
 
-Issue و Pull Request پذیرفته می‌شود. برای گزارش خطا، نسخه Word، سیستم‌عامل،
-فونت‌های نصب‌شده و یک نمونه غیرمحرمانه ارائه کنید.
+issue و pull request پذیرفته می‌شود. گزارش مفید شامل موتور رندر، نسخهٔ Word، فونت‌های نصب‌شده و یک فایل نمونهٔ کوچک است که خطای دوجهته را نشان دهد. هرگز سند محرمانه ارسال نکنید.
 
 ## مجوز
 
-این پروژه با مجوز MIT منتشر شده است.
+مجوز MIT. فایل LICENSE را ببینید.
