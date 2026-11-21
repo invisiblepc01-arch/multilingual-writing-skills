@@ -45,7 +45,7 @@ lxml
 می‌توانید مخزن را از GitHub به‌صورت ZIP دانلود کنید یا آن را Clone کنید:
 
 ```text
-git clone https://github.com/invisiblepc01-arch/build-bilingual-docx.git
+git clone https://github.com/invisiblepc01-arch/multilingual-writing-skills.git
 ```
 
 در روش ZIP، از صفحه مخزن گزینه **Code → Download ZIP** را انتخاب و فایل را
@@ -56,33 +56,20 @@ git clone https://github.com/invisiblepc01-arch/build-bilingual-docx.git
 
 ## ۳. ساختار صحیح پس از استخراج
 
-فایل ZIP را Extract کنید. نتیجه باید دقیقاً یک پوشه به نام زیر باشد:
+فایل ZIP را Extract کنید. پوشهٔ اصلی مخزن دو مهارت مستقل را در خود دارد:
 
 ```text
-build-bilingual-docx
-```
-
-درون آن باید حداقل این ساختار وجود داشته باشد:
-
-```text
-build-bilingual-docx/
+multilingual-writing-skills/          پوشهٔ ریشه: مهارت Word
 ├── SKILL.md
 ├── agents/
-│   └── openai.yaml
 ├── references/
-│   ├── ooxml-bidi.md
-│   ├── portability.md
-│   ├── qa-matrix.md
-│   ├── toc-and-numbering.md
-│   └── word-roundtrip.md
-└── scripts/
-    ├── audit_docx_bidi.py
-    ├── audit_docx_run_props.py
-    ├── audit_word_effective_alignment.ps1
-    ├── harden_docx_bidi.py
-    ├── make_bidi_fixture.py
-    └── smoke_test.py
+├── scripts/
+└── multilingual-chat-writing/        مهارت نگارش در چت
+    ├── SKILL.md
+    └── references/
 ```
+
+برای نصب مهارت Word، پوشهٔ ریشه را کپی کنید و نام مقصد را `build-bilingual-docx` بگذارید. برای نصب مهارت چت، فقط پوشهٔ `multilingual-chat-writing` را کپی کنید. در هر دو حالت، فایل `SKILL.md` باید مستقیماً در پوشهٔ نهایی باشد.
 
 خطای متداول، ایجاد یک پوشه اضافی است:
 
@@ -113,10 +100,11 @@ build-bilingual-docx/build-bilingual-docx/SKILL.md
 روش PowerShell:
 
 ```powershell
-$source = (Resolve-Path ".\build-bilingual-docx").Path
+$source = (Resolve-Path ".\multilingual-writing-skills").Path
 $destinationRoot = Join-Path $env:USERPROFILE ".codex\skills"
 New-Item -ItemType Directory -Force -Path $destinationRoot | Out-Null
-Copy-Item -LiteralPath $source -Destination $destinationRoot -Recurse
+Copy-Item -LiteralPath $source -Destination (Join-Path $destinationRoot "build-bilingual-docx") -Recurse
+Copy-Item -LiteralPath (Join-Path $source "multilingual-chat-writing") -Destination $destinationRoot -Recurse
 ```
 
 ### مسیر سازگار با موتورهای مبتنی بر Agent Skills
@@ -125,15 +113,17 @@ Copy-Item -LiteralPath $source -Destination $destinationRoot -Recurse
 
 ```text
 %USERPROFILE%\.agents\skills\build-bilingual-docx\SKILL.md
+%USERPROFILE%\.agents\skills\multilingual-chat-writing\SKILL.md
 ```
 
 روش PowerShell:
 
 ```powershell
-$source = (Resolve-Path ".\build-bilingual-docx").Path
+$source = (Resolve-Path ".\multilingual-writing-skills").Path
 $destinationRoot = Join-Path $env:USERPROFILE ".agents\skills"
 New-Item -ItemType Directory -Force -Path $destinationRoot | Out-Null
-Copy-Item -LiteralPath $source -Destination $destinationRoot -Recurse
+Copy-Item -LiteralPath $source -Destination (Join-Path $destinationRoot "build-bilingual-docx") -Recurse
+Copy-Item -LiteralPath (Join-Path $source "multilingual-chat-writing") -Destination $destinationRoot -Recurse
 ```
 
 از نصب هم‌زمان دو نسخه با نام یکسان در `.codex\skills` و `.agents\skills`
@@ -154,13 +144,15 @@ $HOME/.codex/skills/build-bilingual-docx/SKILL.md
 
 ```bash
 mkdir -p "$HOME/.codex/skills"
-cp -R "/path/to/build-bilingual-docx" "$HOME/.codex/skills/"
+cp -R "/path/to/multilingual-writing-skills" "$HOME/.codex/skills/build-bilingual-docx"
+cp -R "/path/to/multilingual-writing-skills/multilingual-chat-writing" "$HOME/.codex/skills/"
 ```
 
 برای موتورهای سازگار با ساختار Agent Skills، مسیر جایگزین:
 
 ```text
 $HOME/.agents/skills/build-bilingual-docx/SKILL.md
+$HOME/.agents/skills/multilingual-chat-writing/SKILL.md
 ```
 
 فقط یکی از دو مسیر را انتخاب کنید.
@@ -179,10 +171,11 @@ $HOME/.agents/skills/build-bilingual-docx/SKILL.md
 6. در Codex CLI یا افزونه IDE، فرمان `/skills` را اجرا کنید یا علامت `$` را
    تایپ کنید.
 
-باید نام زیر دیده شود:
+باید نام‌های زیر دیده شوند:
 
 ```text
 build-bilingual-docx
+multilingual-chat-writing
 ```
 
 نام نمایشی ممکن است چنین باشد:

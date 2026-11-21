@@ -8,11 +8,24 @@ Use one of these methods:
 - Clone it:
 
 ```bash
-git clone https://github.com/invisiblepc01-arch/build-bilingual-docx.git
+git clone https://github.com/invisiblepc01-arch/multilingual-writing-skills.git
 ```
 
-The extracted folder must contain `SKILL.md` directly. Avoid an accidental
-double folder such as:
+The repository holds two independent skills:
+
+```text
+multilingual-writing-skills/          # root: the DOCX skill
+├── SKILL.md
+├── agents/, references/, scripts/, tests/
+└── multilingual-chat-writing/        # the chat-writing skill
+    ├── SKILL.md
+    └── references/
+```
+
+Install the DOCX skill by copying the repository root and naming the target
+folder `build-bilingual-docx`. Install the chat skill by copying only the
+`multilingual-chat-writing` folder. Each target folder must contain `SKILL.md`
+directly; avoid an accidental double folder such as:
 
 ```text
 build-bilingual-docx/build-bilingual-docx/SKILL.md
@@ -31,16 +44,18 @@ Preferred current user location:
 PowerShell:
 
 ```powershell
-$source = (Resolve-Path ".\build-bilingual-docx").Path
+$source = (Resolve-Path ".\multilingual-writing-skills").Path
 $root = Join-Path $env:USERPROFILE ".codex\skills"
 New-Item -ItemType Directory -Force -Path $root | Out-Null
-Copy-Item -LiteralPath $source -Destination $root -Recurse
+Copy-Item -LiteralPath $source -Destination (Join-Path $root "build-bilingual-docx") -Recurse
+Copy-Item -LiteralPath (Join-Path $source "multilingual-chat-writing") -Destination $root -Recurse
 ```
 
 Other Agent Skills-compatible engines may discover personal skills under:
 
 ```text
 %USERPROFILE%\.agents\skills\build-bilingual-docx
+%USERPROFILE%\.agents\skills\multilingual-chat-writing
 ```
 
 Use only one location to avoid duplicate entries.
@@ -49,7 +64,8 @@ Use only one location to avoid duplicate entries.
 
 ```bash
 mkdir -p "$HOME/.codex/skills"
-cp -R "/path/to/build-bilingual-docx" "$HOME/.codex/skills/"
+cp -R "/path/to/multilingual-writing-skills" "$HOME/.codex/skills/build-bilingual-docx"
+cp -R "/path/to/multilingual-writing-skills/multilingual-chat-writing" "$HOME/.codex/skills/"
 ```
 
 Compatibility location for other Agent Skills-compatible engines:
@@ -65,7 +81,7 @@ Again, install only one copy.
 1. Fully close ChatGPT Desktop/Codex.
 2. Start it again and open a new task.
 3. Open **Skills** in the desktop sidebar, or run `/skills` in Codex CLI/IDE.
-4. Look for `build-bilingual-docx`.
+4. Look for `build-bilingual-docx` and `multilingual-chat-writing`.
 
 Codex normally detects skill changes automatically. Restart if it does not
 appear.
@@ -186,8 +202,8 @@ Word fidelity.
 To update, close Codex and replace the whole skill folder with the new version.
 Do not merge old and new files unless you have reviewed the differences.
 
-To remove, close Codex and delete/move the installed `build-bilingual-docx`
-folder.
+To remove, close Codex and delete/move the installed `build-bilingual-docx` and
+`multilingual-chat-writing` folders.
 
 To disable without deleting:
 
