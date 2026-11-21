@@ -51,6 +51,23 @@ and words the direction-safe chat representation.
   source looks. Inspect the rendered result when direction or alignment is
   consequential.
 
+## Host rendering capability
+
+Text controls fix the order of atoms inside a run; they cannot set a block's
+base direction or alignment. Detect a host without bidi support by writing a
+Persian paragraph that wraps to two lines and measuring the short final line in
+a screenshot: a final line starting at the left edge means the transcript block
+is LTR, and `RLM`, `RLI`/`PDI`, and inline-code spans cannot fix it. Verified
+case: the same Persian paragraph stayed left-aligned in every text-only variant
+and became right-aligned with correct wrapping only when the block received
+`unicode-bidi: plaintext`.
+
+The fix belongs to the host: apply `unicode-bidi: plaintext` with
+`text-align: start` to rendered message blocks, or set `dir="auto"` on each
+block. Until the host is patched, keep each paragraph to one short sentence,
+keep every English technical term in English and unchanged, and isolate each
+term with `LRI`/`PDI`; never merge several sentences into one paragraph.
+
 ## Ordinary prose and lists
 
 - Lead with the answer and use short RTL-compatible Persian paragraphs.
